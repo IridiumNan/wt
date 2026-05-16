@@ -2,8 +2,8 @@
 
 ## 概述
 
-- 一款基于go的超轻量级个人仓库管理器
-- 纯命令行， 没有UI界面， 服务器友好
+- 一款基于go的超轻量级个人/小团队仓库管理器
+- CLI 工具， 没有图形化界面, 服务器友好
 - CS 架构， 二进制文件开箱即用
 - 简便高效,没有任何花里胡哨
 
@@ -15,6 +15,12 @@
 
 ```bash
 wt search <package name>
+```
+
+- 查看包的详细信息
+
+```bash
+wt info <package name>
 ```
 
 - 下载仓库中的包
@@ -55,7 +61,7 @@ wt rm <package name>
 
 这里分成三种权限
 
-1. Read -> search
+1. Read -> search list info
 2. Install -> install
 3. Write -> upload replace mv rm tag
 

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"gitee.com/cai-zixiang_hainan/wt/internal/model"
 	"gitee.com/cai-zixiang_hainan/wt/internal/presets/querypresets"
@@ -14,6 +15,9 @@ import (
 
 var scanner = bufio.NewScanner(os.Stdin)
 
+var serverConfig *model.ServerConfig
+
+// queryServerConfig : generate a serverconfig by query and called by LoadServerConfig
 func queryServerConfig() (serverConfig *model.ServerConfig) {
 	serverConfig = &model.ServerConfig{
 		Server: queryHostPort(querypresets.ServerHostPortQuery),
@@ -30,7 +34,8 @@ func queryServerConfig() (serverConfig *model.ServerConfig) {
 	return
 }
 
-func writeServerConfig(configPath string, serverConfig *model.ServerConfig) (err error) {
+// writeServerConfig : write server config file to configPath
+func writeServerConfig(configPath string) (err error) {
 	configData, jsonErr := json.MarshalIndent(*serverConfig, "", "	")
 
 	if jsonErr != nil {
@@ -59,7 +64,12 @@ func writeServerConfig(configPath string, serverConfig *model.ServerConfig) (err
 	return
 }
 
-func LoadServerConfig() (serverConfig *model.ServerConfig, err error) {
+func InitServerConfig() (err error) {
+	serverConfig, err = loadServerConfig()
+	return
+}
+
+func loadServerConfig() (serveserverConfig *model.ServerConfig, err error) {
 	configPath, err := getServerConfigPath()
 	if err != nil {
 		return
@@ -75,7 +85,7 @@ func LoadServerConfig() (serverConfig *model.ServerConfig, err error) {
 	serverConfig = &model.ServerConfig{}
 	if os.IsNotExist(err) {
 		serverConfig = queryServerConfig()
-		err = writeServerConfig(configPath, serverConfig)
+		err = writeServerConfig(configPath)
 		if err != nil {
 			panic(err)
 		}
@@ -86,4 +96,39 @@ func LoadServerConfig() (serverConfig *model.ServerConfig, err error) {
 	fmt.Println("load config from ", configPath, " as below:")
 	fmt.Println(string(data))
 	return
+}
+
+// GetServerHostPortFromServer : return the host:port from the server config
+func GetServerHostPortFromServer() (server string) {
+	return serverConfig.Server
+}
+
+// GetServerReadTimeout : return the readTimeout from the server config
+func GetServerReadTimeout() (readTimeout time.Duration) {
+	return serverConfig.ReadTimeout
+}
+
+// GetServerInstallTimeout : return the install Timeout from the server config
+func GetServerInstallTimeout() (installTimeout time.Duration) {
+	return serverConfig.InstallTimeout
+}
+
+// GetServerWriteTimeout : return the write Timeout from the server config
+func GetServerWriteTimeout() (writeTimeout time.Duration) {
+	return serverConfig.WriteTimeout
+}
+
+// GetServerReadTokenList : return the read token list from the server config
+func GetServerReadTokenList() (tokenList []string) {
+	return serverConfig.ReadToken
+}
+
+// GetServerInstallTokenList : return the server token list from the server config
+func GetServerInstallTokenList() (tokenList []string) {
+	return serverConfig.InstallToken
+}
+
+// GetServerWriteTokenList : return the write token list from the server config
+func GetServerWriteTokenList() (tokenList []string) {
+	return serverConfig.WriteToken
 }

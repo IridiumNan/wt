@@ -21,3 +21,11 @@ type Package struct {
 	// modify time
 	ModTime time.Time `json:"mod_time"`
 }
+
+type MetaData struct {
+	// key : package name , value : *package
+	DataMap map[string]*Package `json:"data_map"`
+
+	// key : tag, value : nameList
+	TagMap map[string][]string `json:"tag_map"`
+}
