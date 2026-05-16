@@ -4,9 +4,9 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
-	"time"
 
 	"gitee.com/cai-zixiang_hainan/wt/internal/model"
 	"gitee.com/cai-zixiang_hainan/wt/internal/presets/querypresets"
@@ -14,7 +14,7 @@ import (
 
 var clientConfig *model.ClientConfig
 
-func queryClientConfig() (clientConfig *model.ClientConfig) {
+func queryClientConfig() {
 	clientConfig = &model.ClientConfig{
 		Server: queryHostPort(querypresets.ClientHostPortQuery),
 
@@ -80,8 +80,9 @@ func loadClientConfig() (clientConfig *model.ClientConfig, err error) {
 	data, err := os.ReadFile(configPath)
 	clientConfig = &model.ClientConfig{}
 	if os.IsNotExist(err) {
+		fmt.Println("expected config file: ", configPath)
 		fmt.Printf("client config file not exsit, begin to init...\n\n")
-		clientConfig = queryClientConfig()
+		queryClientConfig()
 		err = writeClientConfig(configPath)
 		if err != nil {
 			panic(err)
@@ -95,42 +96,7 @@ func loadClientConfig() (clientConfig *model.ClientConfig, err error) {
 		panic(err)
 	}
 
-	fmt.Println("load config from ", configPath, " as below:")
-	fmt.Println(string(data))
+	slog.Debug("load config from" + configPath)
+	slog.Debug(string(data))
 	return
-}
-
-// GetServerHostPortFromClient : return the host:port from the client config
-func GetServerHostPortFromClient() (server string) {
-	return clientConfig.Server
-}
-
-// GetClientReadTimeout : return the readTimeout from the client config
-func GetClientReadTimeout() (readTimeout time.Duration) {
-	return clientConfig.ReadTimeout
-}
-
-// GetClientInstallTimeout : return the install Timeout from the client config
-func GetClientInstallTimeout() (installTimeout time.Duration) {
-	return clientConfig.InstallTimeout
-}
-
-// GetClientWriteTimeout : return the write Timeout from the client config
-func GetClientWriteTimeout() (writeTimeout time.Duration) {
-	return clientConfig.WriteTimeout
-}
-
-// GetClientReadToken : return the read token  from the client config
-func GetClientReadToken() (token string) {
-	return clientConfig.ReadToken
-}
-
-// GetClientInstallToken : return the install token from the client config
-func GetClientInstallToken() (token string) {
-	return clientConfig.InstallToken
-}
-
-// GetClientWriteToken : return the write token  from the client config
-func GetClientWriteToken() (token string) {
-	return clientConfig.WriteToken
 }

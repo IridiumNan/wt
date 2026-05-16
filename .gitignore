@@ -1,3 +1,5 @@
 test/
 bin/
 plan.md
+data/
+meta_data.json

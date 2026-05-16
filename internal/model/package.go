@@ -5,7 +5,10 @@
 // ServerConfig : store and handle the server config
 package model
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // Package : meta data for package which store in memory for fast check
 type Package struct {
@@ -28,4 +31,14 @@ type MetaData struct {
 
 	// key : tag, value : nameList
 	TagMap map[string][]string `json:"tag_map"`
+}
+
+func (pkg *Package) Info() string {
+    return fmt.Sprintf(
+        "Pkg Name:    %s\nTag:         %s\nSize:        %d bytes\nModify Time: %v",
+        pkg.Name,
+        pkg.Tag,
+        pkg.Size,
+        pkg.ModTime.Format("2006-01-02 15:04:05"),
+    )
 }

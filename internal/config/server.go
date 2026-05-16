@@ -5,9 +5,9 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
-	"time"
 
 	"gitee.com/cai-zixiang_hainan/wt/internal/model"
 	"gitee.com/cai-zixiang_hainan/wt/internal/presets/querypresets"
@@ -15,7 +15,7 @@ import (
 
 var scanner = bufio.NewScanner(os.Stdin)
 
-var serverConfig *model.ServerConfig
+var serverConfig *model.ServerConfig = &model.ServerConfig{}
 
 // queryServerConfig : generate a serverconfig by query and called by LoadServerConfig
 func queryServerConfig() (serverConfig *model.ServerConfig) {
@@ -38,6 +38,8 @@ func queryServerConfig() (serverConfig *model.ServerConfig) {
 func writeServerConfig(configPath string) (err error) {
 	configData, jsonErr := json.MarshalIndent(*serverConfig, "", "	")
 
+	slog.Debug("write the server config as " + string(configData))
+
 	if jsonErr != nil {
 		panic(jsonErr)
 	}
@@ -50,7 +52,7 @@ func writeServerConfig(configPath string) (err error) {
 
 	if fileErr != nil {
 		err = fileErr
-		fmt.Println("file open error:", err)
+		slog.Error("file open error in write server config", "configPath", configPath, "err", err)
 		return
 	}
 	defer configFile.Close()
@@ -69,66 +71,43 @@ func InitServerConfig() (err error) {
 	return
 }
 
-func loadServerConfig() (serveserverConfig *model.ServerConfig, err error) {
-	configPath, err := getServerConfigPath()
-	if err != nil {
+func loadServerConfig() (config *model.ServerConfig, err error) {
+	configPath, pathErr := getServerConfigPath()
+	if pathErr != nil {
+		err = pathErr
 		return
 	}
 
 	configDir := filepath.Dir(configPath)
-	if err = os.MkdirAll(configDir, 0o755); err != nil {
+	if mkDirErr := os.MkdirAll(configDir, 0o755); mkDirErr != nil {
+		err = mkDirErr
 		return
 	}
 
 	// read the config file
-	data, err := os.ReadFile(configPath)
-	serverConfig = &model.ServerConfig{}
-	if os.IsNotExist(err) {
-		serverConfig = queryServerConfig()
+	data, readErr := os.ReadFile(configPath)
+	if os.IsNotExist(readErr) {
+		config = queryServerConfig()
+		serverConfig = config
 		err = writeServerConfig(configPath)
 		if err != nil {
 			panic(err)
 		}
+
+		return
 	}
 
-	json.Unmarshal(data, serverConfig)
+	config = &model.ServerConfig{}
+
+	jsonErr := json.Unmarshal(data, config)
+
+	if jsonErr != nil {
+		slog.Error("fail to unmarshal when load server config", "err", jsonErr)
+		err = jsonErr
+		return
+	}
 
 	fmt.Println("load config from ", configPath, " as below:")
 	fmt.Println(string(data))
 	return
-}
-
-// GetServerHostPortFromServer : return the host:port from the server config
-func GetServerHostPortFromServer() (server string) {
-	return serverConfig.Server
-}
-
-// GetServerReadTimeout : return the readTimeout from the server config
-func GetServerReadTimeout() (readTimeout time.Duration) {
-	return serverConfig.ReadTimeout
-}
-
-// GetServerInstallTimeout : return the install Timeout from the server config
-func GetServerInstallTimeout() (installTimeout time.Duration) {
-	return serverConfig.InstallTimeout
-}
-
-// GetServerWriteTimeout : return the write Timeout from the server config
-func GetServerWriteTimeout() (writeTimeout time.Duration) {
-	return serverConfig.WriteTimeout
-}
-
-// GetServerReadTokenList : return the read token list from the server config
-func GetServerReadTokenList() (tokenList []string) {
-	return serverConfig.ReadToken
-}
-
-// GetServerInstallTokenList : return the server token list from the server config
-func GetServerInstallTokenList() (tokenList []string) {
-	return serverConfig.InstallToken
-}
-
-// GetServerWriteTokenList : return the write token list from the server config
-func GetServerWriteTokenList() (tokenList []string) {
-	return serverConfig.WriteToken
 }

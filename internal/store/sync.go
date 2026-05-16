@@ -2,7 +2,7 @@ package store
 
 import (
 	"encoding/json"
-	"fmt"
+	"log/slog"
 	"os"
 
 	"gitee.com/cai-zixiang_hainan/wt/internal/model"
@@ -18,7 +18,7 @@ func writeMetaData(byteData []byte) (err error) {
 		0o644,
 	)
 	if err != nil {
-		fmt.Println("fail to open tempFile")
+		slog.Error("fail to open tempFIle", "tempFile", tempFile, "err", err)
 	}
 
 	_, err = tempFile.Write(byteData)
@@ -28,7 +28,7 @@ func writeMetaData(byteData []byte) (err error) {
 	closeErr := tempFile.Close()
 
 	if closeErr != nil {
-		fmt.Println("temp file close err :", closeErr)
+		slog.Error("tempFile close error", "tempFile", tempFile, "err", err)
 		err = closeErr
 		panic(err)
 	}
