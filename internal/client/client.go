@@ -76,8 +76,6 @@ func infoRequest(pkgName string) (err error) {
 
 	jsonData, _ := json.Marshal(apiRsp.Data)
 
-	fmt.Println("client jsonData", string(jsonData))
-
 	var results []*model.Package
 	err = json.Unmarshal(jsonData, &results)
 	if err != nil {
@@ -262,6 +260,45 @@ func uploadRequest(filePath string, pkgName string) (err error) {
 	return nil
 }
 
+func mvRequest(oldName string, newName string) (err error) {
+	if isEmpty(oldName) || isEmpty(newName) {
+		return fmt.Errorf("missing old name or new name")
+	}
+
+	val := url.Values{}
+	val.Set("old_name", oldName)
+	val.Set("new_name", newName)
+	apiRsp, err := doRequest(http.MethodPost, "/mv", val, model.WTWrite, nil)
+	if err != nil {
+		return
+	}
+
+	slog.Debug(apiRsp.Message, "func", "mvRequest")
+
+	jsonData, _ := json.Marshal(apiRsp.Data)
+
+	slog.Debug("client jsonData", "data", string(jsonData))
+
+	fmt.Println(string(jsonData))
+
+	return
+}
+
+func syncRequest() (err error) {
+	val := url.Values{}
+	apiRsp, err := doRequest(http.MethodPut, "/sync", val, model.WTWrite, nil)
+	if err != nil {
+		return
+	}
+
+	jsonData, _ := json.Marshal(apiRsp.Data)
+
+	fmt.Println("Status Code ", apiRsp.Code)
+	fmt.Println(string(jsonData))
+
+	return nil
+}
+
 func doRequest(
 	method string,
 	endpoint string,
@@ -292,7 +329,7 @@ func doRequest(
 
 	// set the token to Header
 	if token != "" {
-		headName := config.GetTokenHeadName(model.WTRead)
+		headName := config.GetTokenHeadName(wtMethod)
 		req.Header.Set(headName, token)
 	}
 
@@ -332,12 +369,20 @@ func doRequest(
 }
 
 func ClientMain(args []string) {
+	command := args[CommandIndex]
+
+	if command == "sync" {
+		err := syncRequest()
+		if err != nil {
+			fmt.Println("exec command ", command, " fail :", err)
+		}
+		return
+	}
 	if len(args) < 3 {
 		fmt.Println(commonpresets.HelpManual)
 
 		fmt.Println("at least 2 parameters")
 	}
-	command := args[CommandIndex]
 
 	if command == "--help" || command == "-h" || command == "help" {
 		fmt.Println(commonpresets.HelpManual)
@@ -356,25 +401,22 @@ func ClientMain(args []string) {
 	case "upload":
 		if len(args) >= 4 {
 			err = uploadRequest(args[FirstTargetIndex], args[SecondTargetIndex])
-			if err != nil {
-				fmt.Println("exec command upload fail: ", err)
-			}
+		} else {
+			err = uploadRequest(args[FirstTargetIndex], "")
+		}
+
+	// case "replace":
+	// 	if len(args) < 4 {
+	// 		fmt.Println("Usage: wt replace <package name> <path to your new package>")
+	// 		return
+	// 	}
+	// 	replaceRequest(args[2], args[3])
+	case "mv":
+		if len(args) < 4 {
+			fmt.Println("Usage: wt mv <package name> <new package name>")
 			return
 		}
-		err = uploadRequest(args[FirstTargetIndex], "")
-
-		// case "replace":
-		// 	if len(args) < 4 {
-		// 		fmt.Println("Usage: wt replace <package name> <path to your new package>")
-		// 		return
-		// 	}
-		// 	replaceRequest(args[2], args[3])
-		// case "mv":
-		// 	if len(args) < 4 {
-		// 		fmt.Println("Usage: wt mv <package name> <new package name>")
-		// 		return
-		// 	}
-		// 	mvRequest(args[2], args[3])
+		err = mvRequest(args[2], args[3])
 		// case "rm":
 		// 	rmRequest(args[2])
 	case "list":

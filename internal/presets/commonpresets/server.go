@@ -10,7 +10,7 @@ import (
 const (
 	DefaultTagTemp   = "temp"
 	DefaultTagStatic = "static"
-	DataDir          = "./"
+	DataDir          = "."
 	metaDataFileName = "meta_data.json"
 )
 

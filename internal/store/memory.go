@@ -8,7 +8,6 @@ import (
 	"io/fs"
 	"log/slog"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 
@@ -114,34 +113,23 @@ func AddPackage(info fs.FileInfo) {
 	}
 }
 
-// RenamePackage : rename single package
+// RenamePackage : rename single package without disk operation
 func RenamePackage(oldName string, newName string) (err error) {
-	// rename real pkg
-	oldPath := filepath.Join(commonpresets.DataDir, oldName)
-	newPath := filepath.Join(commonpresets.DataDir, newName)
-
-	err = os.Rename(oldPath, newPath)
-	if err != nil {
-		slog.Error(
-			"err when rename the file",
-			"func", "store.RenamePackage",
-		)
-	}
-
 	// modify the meateData
 	MapLock.Lock()
 	defer MapLock.Unlock()
 
-	value := metaData.DataMap[oldName]
-	value.Name = newName
-	metaData.DataMap[newName] = value
+	pkg := metaData.DataMap[oldName]
+	pkg.Name = newName
+	metaData.DataMap[newName] = pkg
 
-	oldNameList := metaData.TagMap[value.Tag]
+	oldNameList := metaData.TagMap[pkg.Tag]
 
 	for i := range oldNameList {
 		if oldNameList[i] == oldName {
 			newNameList := append(oldNameList[:i], oldNameList[i+1:]...)
-			metaData.TagMap[value.Tag] = newNameList
+			newNameList = append(newNameList, newName)
+			metaData.TagMap[pkg.Tag] = newNameList
 			break
 		}
 	}
@@ -207,8 +195,8 @@ func DeletePackageByTag(metaData *model.MetaData, tagName string) {
 	}
 }
 
-// initMetaData which tag all packages as temp group
-func initMetaData() (metaData *model.MetaData) {
+// SyncMetaDataFromDisk which tag all packages as temp group
+func SyncMetaDataFromDisk() {
 	dir, err := os.ReadDir(commonpresets.DataDir)
 	if err != nil {
 		slog.Error(
@@ -246,8 +234,6 @@ func initMetaData() (metaData *model.MetaData) {
 			slog.Any("err", err),
 		)
 	}
-
-	return
 }
 
 // InitMetaData : init the package scope metaData variant
@@ -274,7 +260,7 @@ func loadMetaData() (err error) {
 	byteData, err := os.ReadFile(dataPath)
 
 	if os.IsNotExist(err) {
-		metaData = initMetaData()
+		SyncMetaDataFromDisk()
 		slog.Info("meta_data.json not found, create new one")
 		slog.Info("all packages will be taged as temp")
 		err = nil

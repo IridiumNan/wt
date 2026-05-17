@@ -1,6 +1,8 @@
 package server
 
 import (
+	"encoding/json"
+	"log/slog"
 	"slices"
 
 	"gitee.com/cai-zixiang_hainan/wt/internal/config"
@@ -16,6 +18,8 @@ func tokenInList(token string, tokenList []string) (inList bool) {
 func isAccess(auth model.Auth) (valid bool) {
 	clientToken := auth.Token
 
+	authByte, _ := json.Marshal(auth)
+	slog.Debug("check auth", "auth", string(authByte))
 	if clientToken == "" {
 		return
 	}

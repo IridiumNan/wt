@@ -1,6 +1,8 @@
 package server
 
-import "net/http"
+import (
+	"net/http"
+)
 
 func NewRouter() *http.ServeMux {
 	mux := *http.NewServeMux()
@@ -13,6 +15,7 @@ func NewRouter() *http.ServeMux {
 	mux.HandleFunc("/mv", mvHandler)
 	mux.HandleFunc("/rm", rmHandler)
 	mux.HandleFunc("/list", listHandler)
+	mux.HandleFunc("/sync", syncHandler)
 
 	return &mux
 }

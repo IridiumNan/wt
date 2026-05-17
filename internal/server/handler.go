@@ -208,6 +208,66 @@ func replaceHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func mvHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	data := r.URL.Query()
+	tokenHeadName := config.GetTokenHeadName(model.WTWrite)
+
+	errMsg := "has no access to write"
+	auth := model.Auth{
+		WtMethod: model.WTWrite,
+		Token:    r.Header.Get(tokenHeadName),
+		ErrMsg:   errMsg,
+	}
+
+	if !isAccess(auth) {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusForbidden,
+			model.ForbiddenResponse(errMsg),
+		)
+		return
+	}
+
+	oldName := data.Get("old_name")
+	newName := data.Get("new_name")
+	slog.Debug("receive old name and new name of package", "old_name", oldName, "new_name", newName)
+
+	if oldName == "" || newName == "" {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusBadRequest,
+			model.BadRequestResponse("package name requeired"),
+		)
+
+		return
+	}
+
+	oldPath := filepath.Join(commonpresets.DataDir, oldName)
+	newPath := filepath.Join(commonpresets.DataDir, newName)
+	if err := os.Rename(oldPath, newPath); err != nil {
+		if os.IsNotExist(err) {
+			httphelper.SendJSONResponse(
+				w,
+				http.StatusNotFound,
+				model.NotFoundResponse("package "+oldName+"not found"),
+			)
+			return
+		}
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusInternalServerError,
+			model.InternalErrorResponse("error: "+err.Error()),
+		)
+		return
+	}
+
+	store.RenamePackage(oldName, newName)
+
+	httphelper.SendJSONResponse(
+		w,
+		http.StatusOK,
+		model.SuccessfulResponse("mv the "+oldName+" to "+newName, ""),
+	)
 }
 
 func rmHandler(w http.ResponseWriter, r *http.Request) {
@@ -261,5 +321,34 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 		w,
 		http.StatusOK,
 		model.SuccessfulResponse(nameList, "packages found"),
+	)
+}
+
+func syncHandler(w http.ResponseWriter, r *http.Request) {
+	tokenHeadName := config.GetTokenHeadName(model.WTWrite)
+
+	errMsg := "has no access to write"
+	auth := model.Auth{
+		WtMethod: model.WTWrite,
+		Token:    r.Header.Get(tokenHeadName),
+		ErrMsg:   errMsg,
+	}
+
+	if !isAccess(auth) {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusForbidden,
+			model.ForbiddenResponse(errMsg),
+		)
+		slog.Debug("check over")
+		return
+	}
+
+	slog.Debug("sync the meta data")
+	store.SyncMetaDataFromDisk()
+	httphelper.SendJSONResponse(
+		w,
+		http.StatusOK,
+		model.SuccessfulResponse("sync data from disk success", ""),
 	)
 }
