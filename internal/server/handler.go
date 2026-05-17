@@ -1,9 +1,13 @@
 package server
 
 import (
+	"io"
 	"log/slog"
+	"mime/multipart"
 	"net/http"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"gitee.com/cai-zixiang_hainan/wt/internal/config"
 	"gitee.com/cai-zixiang_hainan/wt/internal/model"
@@ -30,7 +34,7 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		httphelper.SendJSONResponse(
 			w,
 			http.StatusForbidden,
-			model.ForbiddenResponse("has no access to read"),
+			model.ForbiddenResponse(errMsg),
 		)
 		return
 	}
@@ -115,6 +119,89 @@ func installHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func uploadHandler(w http.ResponseWriter, r *http.Request) {
+	// Step 1: Get the boundary from Content-Type header
+	contentType := r.Header.Get("Content-Type")
+	if !strings.HasPrefix(contentType, "multipart/") {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusBadRequest,
+			model.BadRequestResponse("invalid content type"),
+		)
+		return
+	}
+
+	// Extract boundary (e.g., "boundary=----WebKitFormBoundary...")
+	boundary := strings.TrimPrefix(contentType, "multipart/form-data; boundary=")
+	if boundary == "" {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusBadRequest,
+			model.BadRequestResponse("missing boundary"),
+		)
+		return
+	}
+
+	// Step 2: Create a multipart reader with a small buffer (e.g., 64KB)
+	reader := multipart.NewReader(r.Body, boundary)
+
+	var pkgName string
+	var filePart *multipart.Part
+
+	for {
+		part, err := reader.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			httphelper.SendJSONResponse(w, http.StatusBadRequest, model.BadRequestResponse("error reading form"))
+		}
+
+		if part.FormName() == "name" {
+
+			nameBytes, _ := io.ReadAll(part)
+			pkgName = string(nameBytes)
+			slog.Debug("get the custom file name", "name", pkgName)
+		} else if part.FormName() == "file" {
+			filePart = part
+
+			break
+		}
+		part.Close()
+	}
+
+	if filePart == nil {
+		httphelper.SendJSONResponse(w, http.StatusBadRequest, model.BadRequestResponse("missing file filed"))
+		return
+	}
+
+	defer filePart.Close()
+
+	fileName := pkgName
+	if fileName == "" {
+		fileName = filePart.FormName()
+	}
+
+	savePath := filepath.Join(commonpresets.DataDir, fileName)
+	dst, err := os.Create(savePath)
+	if err != nil {
+		httphelper.SendJSONResponse(w, http.StatusInternalServerError, model.InternalErrorResponse("fail to create file:"+savePath))
+		return
+	}
+
+	defer dst.Close()
+
+	written, err := io.Copy(dst, filePart)
+	if err != nil {
+		httphelper.SendJSONResponse(w, http.StatusInternalServerError, model.InternalErrorResponse("fail to write file:"+savePath))
+	}
+
+	// Step 6: Update metadata
+	fileInfo, _ := dst.Stat()
+
+	store.AddPackage(fileInfo)
+
+	slog.Info("Package uploaded via stream", "name", fileName, "size", written)
+	httphelper.SendJSONResponse(w, http.StatusOK, model.SuccessfulResponse("package uploaded successfully", ""))
 }
 
 func replaceHandler(w http.ResponseWriter, r *http.Request) {
@@ -127,4 +214,52 @@ func rmHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func listHandler(w http.ResponseWriter, r *http.Request) {
+	data := r.URL.Query()
+	tokenHeadName := config.GetTokenHeadName(model.WTRead)
+
+	errMsg := "has no access to read"
+	auth := model.Auth{
+		WtMethod: model.WTRead,
+		Token:    r.Header.Get(tokenHeadName),
+		ErrMsg:   errMsg,
+	}
+
+	if !isAccess(auth) {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusForbidden,
+			model.ForbiddenResponse(errMsg),
+		)
+		return
+	}
+
+	targetTag := data.Get("tag")
+
+	slog.Debug("receive tag (server)", "tag", targetTag)
+
+	errMsg = "require tag"
+	if targetTag == "" {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusBadRequest,
+			model.BadRequestResponse(errMsg),
+		)
+	}
+
+	nameList := store.ListPackagesByTag(targetTag)
+
+	if nameList == nil {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusNotFound,
+			model.NotFoundResponse("there is no package tag as "+targetTag),
+		)
+		return
+	}
+
+	httphelper.SendJSONResponse(
+		w,
+		http.StatusOK,
+		model.SuccessfulResponse(nameList, "packages found"),
+	)
 }

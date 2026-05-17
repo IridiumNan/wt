@@ -12,6 +12,7 @@ func NewRouter() *http.ServeMux {
 	mux.HandleFunc("/replace", replaceHandler)
 	mux.HandleFunc("/mv", mvHandler)
 	mux.HandleFunc("/rm", rmHandler)
+	mux.HandleFunc("/list", listHandler)
 
 	return &mux
 }

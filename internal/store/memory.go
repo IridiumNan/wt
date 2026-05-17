@@ -183,11 +183,15 @@ func DeletePackageByName(pkgName string) {
 }
 
 // ListPackagesByTag : return the NameList by tag
-func ListPackagesByTag(tagName string) (nameList []string) {
+func ListPackagesByTag(targetTag string) (nameList []string) {
 	MapLock.RLock()
 	defer MapLock.RUnlock()
 
-	nameList = metaData.TagMap[tagName]
+	nameList = metaData.TagMap[targetTag]
+
+	if len(nameList) == 0 {
+		return nil
+	}
 	return
 }
 

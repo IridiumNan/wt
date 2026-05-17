@@ -1,14 +1,17 @@
 package client
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log/slog"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 
 	"gitee.com/cai-zixiang_hainan/wt/internal/config"
 	"gitee.com/cai-zixiang_hainan/wt/internal/model"
@@ -16,7 +19,10 @@ import (
 )
 
 const (
-	URLPrefix = "http://"
+	URLPrefix         = "http://"
+	CommandIndex      = 1
+	FirstTargetIndex  = 2
+	SecondTargetIndex = 3
 )
 
 func isEmpty(target string) bool {
@@ -33,7 +39,6 @@ func searchRequest(pattern string) (err error) {
 	val.Set("name", pattern)
 	apiRsp, err := doRequest(http.MethodGet, "/search", val, model.WTRead, nil)
 	if err != nil {
-		fmt.Println("error when search :", err)
 		return
 	}
 
@@ -44,7 +49,6 @@ func searchRequest(pattern string) (err error) {
 	var results []*model.Package
 	err = json.Unmarshal(jsonData, &results)
 	if err != nil {
-		fmt.Println("fail to unmarshal jsondata to results")
 		return
 	}
 
@@ -161,6 +165,103 @@ func installRequest(pkgName string) (err error) {
 	return nil
 }
 
+func listRequest(targetTag string) (err error) {
+	if isEmpty(targetTag) {
+		err = errors.New("empty target tag for wt list")
+		return
+	}
+
+	val := url.Values{}
+	val.Set("tag", targetTag)
+	apiRsp, err := doRequest(http.MethodGet, "/list", val, model.WTRead, nil)
+	if err != nil {
+		return
+	}
+
+	slog.Debug(apiRsp.Message, "func", "listRequest")
+
+	slog.Debug("received data ", "data", apiRsp.Data)
+
+	var nameList []string
+	jsonData, _ := json.Marshal(apiRsp.Data)
+
+	err = json.Unmarshal(jsonData, &nameList)
+	if err != nil {
+		return
+	}
+
+	for i := range nameList {
+		fmt.Println(nameList[i])
+	}
+
+	return
+}
+
+func uploadRequest(filePath string, pkgName string) (err error) {
+	if isEmpty(filePath) {
+		return errors.New("can not assign empty file path")
+	}
+	if isEmpty(pkgName) {
+		pkgName = filepath.Base(filePath)
+	}
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		return fmt.Errorf("fail to open local file : %s\nerr : %w", err)
+	}
+	defer file.Close()
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	err = writer.WriteField("name", pkgName)
+	if err != nil {
+		return fmt.Errorf("fail to write name field: %s\nerr: %w", pkgName, err)
+	}
+
+	part, err := writer.CreateFormFile("file", pkgName)
+	if err != nil {
+		return fmt.Errorf("fail to create form file : %w", err)
+	}
+
+	if _, err = io.Copy(part, file); err != nil {
+		return fmt.Errorf("fail to copy file content : %w", err)
+	}
+
+	writer.Close()
+
+	fullURL := URLPrefix + config.GetServerAddr(model.WTClient) + "/upload"
+	token := config.GetToken(model.WTWrite)
+	timeout := config.GetTimeout(model.WTClient, model.WTWrite)
+
+	req, err := http.NewRequest(http.MethodPost, fullURL, body)
+	if err != nil {
+		return fmt.Errorf("fail to create request %w", err)
+	}
+
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	if token != "" {
+		req.Header.Set(config.GetTokenHeadName(model.WTWrite), token)
+	}
+
+	client := &http.Client{
+		Timeout: timeout,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("request fail :", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return fmt.Errorf("upload failed (status %d): %s", resp.StatusCode, string(respBody))
+	}
+
+	slog.Info("upload file success", "localFile", filePath, "pkgName", pkgName)
+	return nil
+}
+
 func doRequest(
 	method string,
 	endpoint string,
@@ -236,33 +337,32 @@ func ClientMain(args []string) {
 
 		fmt.Println("at least 2 parameters")
 	}
-	command := args[1]
+	command := args[CommandIndex]
 
 	if command == "--help" || command == "-h" || command == "help" {
 		fmt.Println(commonpresets.HelpManual)
 		return
 	}
-
+	var err error
 	switch command {
 	case "--help", "-h", "help":
 		fmt.Println(commonpresets.HelpManual)
 	case "search":
-		err := searchRequest(args[2])
-		if err != nil {
-			fmt.Println("exec command search fail: ", err)
-		}
+		err = searchRequest(args[FirstTargetIndex])
 	case "info":
-		err := infoRequest(args[2])
-		if err != nil {
-			fmt.Println("exec command info fail: ", err)
-		}
+		err = infoRequest(args[FirstTargetIndex])
 	case "install":
-		err := installRequest(args[2])
-		if err != nil {
-			fmt.Println("exec command install fail: ", err)
+		err = installRequest(args[FirstTargetIndex])
+	case "upload":
+		if len(args) >= 4 {
+			err = uploadRequest(args[FirstTargetIndex], args[SecondTargetIndex])
+			if err != nil {
+				fmt.Println("exec command upload fail: ", err)
+			}
+			return
 		}
-		// case "upload":
-		// uploadRequest(args[2])
+		err = uploadRequest(args[FirstTargetIndex], "")
+
 		// case "replace":
 		// 	if len(args) < 4 {
 		// 		fmt.Println("Usage: wt replace <package name> <path to your new package>")
@@ -277,7 +377,16 @@ func ClientMain(args []string) {
 		// 	mvRequest(args[2], args[3])
 		// case "rm":
 		// 	rmRequest(args[2])
+	case "list":
+		err := listRequest(args[2])
+		if err != nil {
+			fmt.Println("exec command fail: ", err)
+		}
 	default:
 		fmt.Println(commonpresets.HelpManual)
+	}
+
+	if err != nil {
+		fmt.Println("exec command ", command, " fail :", err)
 	}
 }
