@@ -2,31 +2,17 @@ package config
 
 import (
 	"time"
+
+	"gitee.com/cai-zixiang_hainan/wt/internal/model"
 )
 
-type (
-	WTMethod uint8
-	WTType   uint8
-)
-
-const (
-	WTRead    WTMethod = iota
-	WTInstall WTMethod = iota
-	WTWrite   WTMethod = iota
-)
-
-const (
-	WTServer WTType = iota
-	WTClient WTType = iota
-)
-
-func GetTokenHeadName(wtMethod WTMethod) (headName string) {
+func GetTokenHeadName(wtMethod model.WTMethod) (headName string) {
 	switch wtMethod {
-	case WTRead:
+	case model.WTRead:
 		headName = "X-Read-Token"
-	case WTInstall:
+	case model.WTInstall:
 		headName = "X-Install-Token"
-	case WTWrite:
+	case model.WTWrite:
 		headName = "X-Write-Token"
 	}
 
@@ -34,22 +20,22 @@ func GetTokenHeadName(wtMethod WTMethod) (headName string) {
 }
 
 // GetTimeout : get timeout by wtType and wtMethod
-func GetTimeout(wtType WTType, wtMethod WTMethod) (timeout time.Duration) {
+func GetTimeout(wtType model.WTType, wtMethod model.WTMethod) (timeout time.Duration) {
 	switch wtMethod {
-	case WTRead:
-		if wtType == WTServer {
+	case model.WTRead:
+		if wtType == model.WTServer {
 			timeout = serverConfig.ReadTimeout
 		} else {
 			timeout = clientConfig.ReadTimeout
 		}
-	case WTInstall:
-		if wtType == WTServer {
+	case model.WTInstall:
+		if wtType == model.WTServer {
 			timeout = serverConfig.InstallTimeout
 		} else {
 			timeout = clientConfig.InstallTimeout
 		}
-	case WTWrite:
-		if wtType == WTServer {
+	case model.WTWrite:
+		if wtType == model.WTServer {
 			timeout = serverConfig.WriteTimeout
 		} else {
 			timeout = clientConfig.WriteTimeout
@@ -59,36 +45,36 @@ func GetTimeout(wtType WTType, wtMethod WTMethod) (timeout time.Duration) {
 }
 
 // GetTokenList : get TokenList from server config by wtMethod
-func GetTokenList(wtMethod WTMethod) (tokenList []string) {
+func GetTokenList(wtMethod model.WTMethod) (tokenList []string) {
 	switch wtMethod {
-	case WTRead:
+	case model.WTRead:
 		tokenList = serverConfig.ReadToken
-	case WTInstall:
+	case model.WTInstall:
 		tokenList = serverConfig.InstallToken
-	case WTWrite:
+	case model.WTWrite:
 		tokenList = serverConfig.WriteToken
 	}
 
 	return
 }
 
-func GetToken(wtMethod WTMethod) (token string) {
+func GetToken(wtMethod model.WTMethod) (token string) {
 	switch wtMethod {
-	case WTRead:
+	case model.WTRead:
 		token = clientConfig.ReadToken
-	case WTInstall:
+	case model.WTInstall:
 		token = clientConfig.InstallToken
-	case WTWrite:
+	case model.WTWrite:
 		token = clientConfig.WriteToken
 	}
 	return
 }
 
-func GetServerAddr(wtType WTType) (addr string) {
+func GetServerAddr(wtType model.WTType) (addr string) {
 	switch wtType {
-	case WTServer:
+	case model.WTServer:
 		addr = serverConfig.Server
-	case WTClient:
+	case model.WTClient:
 		addr = clientConfig.Server
 	}
 

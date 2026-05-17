@@ -2,25 +2,36 @@ package client
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
+	"os"
 
 	"gitee.com/cai-zixiang_hainan/wt/internal/config"
 	"gitee.com/cai-zixiang_hainan/wt/internal/model"
 	"gitee.com/cai-zixiang_hainan/wt/internal/presets/commonpresets"
 )
 
-func searchRequest(pattern string) {
-	if pattern == "" {
-		fmt.Println("error : package name is required")
+const (
+	URLPrefix = "http://"
+)
+
+func isEmpty(target string) bool {
+	return target == ""
+}
+
+func searchRequest(pattern string) (err error) {
+	if isEmpty(pattern) {
+		err = errors.New("empty pkg name for wt search")
 		return
 	}
+
 	val := url.Values{}
 	val.Set("name", pattern)
-	apiRsp, err := doRequest(http.MethodGet, "/search", val, config.WTRead, nil)
+	apiRsp, err := doRequest(http.MethodGet, "/search", val, model.WTRead, nil)
 	if err != nil {
 		fmt.Println("error when search :", err)
 		return
@@ -40,18 +51,20 @@ func searchRequest(pattern string) {
 	for i := range results {
 		fmt.Println(results[i].Name)
 	}
+
+	return
 }
 
-func infoRequest(pkgName string) {
-	if pkgName == "" {
-		fmt.Println("error : package name is required")
+func infoRequest(pkgName string) (err error) {
+	if isEmpty(pkgName) {
+		err = errors.New("empty pkg name for wt info")
 		return
 	}
+
 	val := url.Values{}
 	val.Set("name", pkgName)
-	apiRsp, err := doRequest(http.MethodGet, "/search", val, config.WTRead, nil)
+	apiRsp, err := doRequest(http.MethodGet, "/search", val, model.WTRead, nil)
 	if err != nil {
-		fmt.Println("error when search :", err)
 		return
 	}
 
@@ -64,7 +77,6 @@ func infoRequest(pkgName string) {
 	var results []*model.Package
 	err = json.Unmarshal(jsonData, &results)
 	if err != nil {
-		fmt.Println("fail to unmarshal jsondata to results")
 		return
 	}
 
@@ -84,24 +96,87 @@ func infoRequest(pkgName string) {
 		fmt.Println(results[i].Info())
 		fmt.Println("-----------------------------------------")
 	}
+
+	return
+}
+
+func installRequest(pkgName string) (err error) {
+	if isEmpty(pkgName) {
+		err = errors.New("empty pkg name for wt install")
+		return
+	}
+
+	val := url.Values{}
+	val.Set("name", pkgName)
+
+	endpoint := "/install"
+
+	fullURL := URLPrefix + config.GetServerAddr(model.WTClient) + endpoint
+	fullURL += "?" + val.Encode()
+
+	token := config.GetToken(model.WTInstall)
+	timeout := config.GetTimeout(model.WTClient, model.WTInstall)
+
+	httpClient := &http.Client{
+		Timeout: timeout,
+	}
+
+	req, err := http.NewRequest(http.MethodGet, fullURL, nil)
+	if err != nil {
+		return fmt.Errorf("fail to create request: %w", err)
+	}
+
+	headName := config.GetTokenHeadName(model.WTInstall)
+	req.Header.Set(headName, token)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("request fail : %w", err)
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("server return status : %d\n error: %w", resp.StatusCode, body)
+	}
+
+	localPath := pkgName
+
+	outFile, err := os.Create(localPath)
+	if err != nil {
+		return fmt.Errorf("fail to create %s here\nerror : %w", localPath, err)
+	}
+	defer outFile.Close()
+
+	written, err := io.Copy(outFile, resp.Body)
+	if err != nil {
+		return fmt.Errorf("crash when installing pkg: %s\nsaved size: %d\nerror: %w", localPath, written, err)
+	}
+
+	slog.Info("Package download successfully",
+		"path", localPath,
+		"size", written)
+
+	return nil
 }
 
 func doRequest(
 	method string,
 	endpoint string,
 	queryParams url.Values,
-	wtMethod config.WTMethod,
+	wtMethod model.WTMethod,
 	body io.Reader,
 ) (apiRsp *model.APIResponse, err error) {
 	// concate full url
-	fullURL := "http://" + config.GetServerAddr(config.WTClient) + endpoint
+	fullURL := URLPrefix + config.GetServerAddr(model.WTClient) + endpoint
 	if queryParams != nil {
 		fullURL += "?" + queryParams.Encode()
 	}
 
 	// get token and timeout
 	token := config.GetToken(wtMethod)
-	timeout := config.GetTimeout(config.WTClient, wtMethod)
+	timeout := config.GetTimeout(model.WTClient, wtMethod)
 
 	// construrct the Client
 	httpClient := &http.Client{
@@ -116,7 +191,7 @@ func doRequest(
 
 	// set the token to Header
 	if token != "" {
-		headName := config.GetTokenHeadName(config.WTRead)
+		headName := config.GetTokenHeadName(model.WTRead)
 		req.Header.Set(headName, token)
 	}
 
@@ -172,11 +247,20 @@ func ClientMain(args []string) {
 	case "--help", "-h", "help":
 		fmt.Println(commonpresets.HelpManual)
 	case "search":
-		searchRequest(args[2])
+		err := searchRequest(args[2])
+		if err != nil {
+			fmt.Println("exec command search fail: ", err)
+		}
 	case "info":
-		infoRequest(args[2])
-		// case "install":
-		// installRequest(args[2])
+		err := infoRequest(args[2])
+		if err != nil {
+			fmt.Println("exec command info fail: ", err)
+		}
+	case "install":
+		err := installRequest(args[2])
+		if err != nil {
+			fmt.Println("exec command install fail: ", err)
+		}
 		// case "upload":
 		// uploadRequest(args[2])
 		// case "replace":
@@ -193,5 +277,7 @@ func ClientMain(args []string) {
 		// 	mvRequest(args[2], args[3])
 		// case "rm":
 		// 	rmRequest(args[2])
+	default:
+		fmt.Println(commonpresets.HelpManual)
 	}
 }

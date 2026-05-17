@@ -4,6 +4,7 @@ import (
 	"slices"
 
 	"gitee.com/cai-zixiang_hainan/wt/internal/config"
+	"gitee.com/cai-zixiang_hainan/wt/internal/model"
 )
 
 // tokenInList : check if token in tokenList
@@ -12,17 +13,19 @@ func tokenInList(token string, tokenList []string) (inList bool) {
 	return
 }
 
-func IsAccess(wtMethod config.WTMethod, clientToken string) (valid bool) {
+func isAccess(auth model.Auth) (valid bool) {
+	clientToken := auth.Token
+
 	if clientToken == "" {
 		return
 	}
-	switch wtMethod {
-	case config.WTRead:
-		valid = tokenInList(clientToken, config.GetTokenList(wtMethod))
-	case config.WTInstall:
-		valid = tokenInList(clientToken, config.GetTokenList(wtMethod))
-	case config.WTWrite:
-		valid = tokenInList(clientToken, config.GetTokenList(wtMethod))
+	switch auth.WtMethod {
+	case model.WTRead:
+		valid = tokenInList(clientToken, config.GetTokenList(auth.WtMethod))
+	case model.WTInstall:
+		valid = tokenInList(clientToken, config.GetTokenList(auth.WtMethod))
+	case model.WTWrite:
+		valid = tokenInList(clientToken, config.GetTokenList(auth.WtMethod))
 	}
 	return
 }

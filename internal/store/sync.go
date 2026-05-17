@@ -11,7 +11,7 @@ import (
 
 // writeMetaData : atomically the byteData to MetaDataPath
 func writeMetaData(byteData []byte) (err error) {
-	tempPath := commonpresets.MetaDataPath + ".tmp"
+	tempPath := commonpresets.MetaDataFile + ".tmp"
 	tempFile, err := os.OpenFile(
 		tempPath,
 		os.O_CREATE|os.O_TRUNC|os.O_WRONLY,
@@ -33,7 +33,7 @@ func writeMetaData(byteData []byte) (err error) {
 		panic(err)
 	}
 
-	err = os.Rename(tempPath, commonpresets.MetaDataPath)
+	err = os.Rename(tempPath, commonpresets.MetaDataFile)
 	if err != nil {
 		panic(err)
 	}

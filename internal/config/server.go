@@ -107,7 +107,6 @@ func loadServerConfig() (config *model.ServerConfig, err error) {
 		return
 	}
 
-	fmt.Println("load config from ", configPath, " as below:")
-	fmt.Println(string(data))
+	slog.Debug("load config...", "config Path", configPath, "config content", string(data))
 	return
 }

@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
 	"gitee.com/cai-zixiang_hainan/wt/internal/config"
+	"gitee.com/cai-zixiang_hainan/wt/internal/model"
 	"gitee.com/cai-zixiang_hainan/wt/internal/server"
 	"gitee.com/cai-zixiang_hainan/wt/internal/store"
 	"gitee.com/cai-zixiang_hainan/wt/pkg/loghelper"
@@ -32,9 +34,9 @@ func main() {
 		panic(err)
 	}
 
-	serveAddr := config.GetServerAddr(config.WTServer)
-	readTimeout := config.GetTimeout(config.WTServer, config.WTRead)
-	writeTimeout := config.GetTimeout(config.WTServer, config.WTWrite)
+	serveAddr := config.GetServerAddr(model.WTServer)
+	readTimeout := config.GetTimeout(model.WTServer, model.WTRead)
+	writeTimeout := config.GetTimeout(model.WTServer, model.WTWrite)
 
 	router := server.NewRouter()
 
@@ -46,9 +48,8 @@ func main() {
 		IdleTimeout:  time.Second * 120,
 	}
 
-	fmt.Println("server start in addr: ", serveAddr)
-	fmt.Println("Read Timeout config: ", readTimeout)
-	fmt.Println("write Timeout config: ", writeTimeout)
+	slog.Debug("server start", "addr", serveAddr)
+	slog.Debug("load timeout config", "readtimeout", readTimeout, "writetimeout", writeTimeout)
 
 	if err := httpServer.ListenAndServe(); err != nil {
 		fmt.Println("serve fail :", err)

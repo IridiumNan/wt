@@ -43,6 +43,9 @@ func SearchPackage(pattern string) (results []*model.Package) {
 			results = append(results, pkg)
 		}
 	}
+	if len(results) == 0 {
+		return nil
+	}
 	return
 }
 
@@ -221,6 +224,10 @@ func initMetaData() (metaData *model.MetaData) {
 	for _, entry := range dir {
 		info, _ := entry.Info()
 
+		if info.IsDir() {
+			continue
+		}
+
 		defaultPack = getDefaultPackage(info)
 		metaData.DataMap[info.Name()] = defaultPack
 		metaData.TagMap[commonpresets.DefaultTagTemp] = append(metaData.TagMap[commonpresets.DefaultTagTemp], info.Name())
@@ -253,7 +260,12 @@ func InitMetaData() (err error) {
 
 // LoadMetaData : load the meta data for file
 func loadMetaData() (err error) {
-	dataPath := commonpresets.MetaDataPath
+	dataPath := commonpresets.MetaDataFile
+
+	err = os.MkdirAll(commonpresets.MetaDataDir, 0o755)
+	if err != nil {
+		panic(err)
+	}
 
 	byteData, err := os.ReadFile(dataPath)
 

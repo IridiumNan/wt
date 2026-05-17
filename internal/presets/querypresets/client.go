@@ -1,9 +1,7 @@
 // Package querypresets : set the Querys in advance
 package querypresets
 
-import (
-	"gitee.com/cai-zixiang_hainan/wt/internal/model"
-)
+import "gitee.com/cai-zixiang_hainan/wt/internal/model"
 
 var ClientHostPortQuery = model.Query{
 	Head:    ">>set the server -> host:port<<",
