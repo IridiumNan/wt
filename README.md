@@ -1,159 +1,132 @@
 # water-repo
 
-## 概述
-
-- 一款基于go的超轻量级个人/小团队仓库管理器
-- CLI 工具， 没有图形化界面, 服务器友好
-- CS 架构， 二进制文件开箱即用
-- 简便高效,没有任何花里胡哨
+超轻量级个人/小团队仓库管理工具，基于 Go 开发，纯 CLI 交互（无图形化界面），天生适配服务器环境；CS 架构设计，单二进制文件开箱即用，零依赖零配置，没有任何多余功能。
 
 ---
 
-## 基本用法
+## 核心用法
 
-- 搜索仓库中的包
+### 基础操作
 
-```bash
-wt search <package name>
-```
-
-- 查看包的详细信息
-
-```bash
-wt info <package name>
-```
-
-- 下载仓库中的包
-
-```bash
-wt install <package name>
-```
-
-- 上传本地的文件
-
-```bash
-wt upload <path to your local package>
-```
-
-- 替换仓库中的包(用于更新)
-
-```bash
-wt replace <package name> <path to your new package>
-```
-
-- 重命名仓库的包
-
-```bash
-wt mv <package name> <new package name>
-```
-
-- 删除仓库中的包
-
-```bash
-wt rm <package name>
-```
+| 操作场景    | 命令示例                               | 说明                      |
+| ------- | ---------------------------------- | ----------------------- |
+| 搜索仓库中的包 | `wt search <package name>`         | 根据包名模糊检索所有资源            |
+| 查看包详情   | `wt info <package name>`           | 获取包大小、上传时间、标签等信息        |
+| 下载安装包   | `wt install <package name>`        | 从仓库下载指定包到本地             |
+| 上传本地包   | `wt upload <local-package-path>`   | 将本地文件上传至仓库，默认标签为 `temp` |
+| 替换更新包   | `wt replace <pkg-name> <new-path>` | 覆盖仓库中已有包，用于版本更新         |
+| 重命名包    | `wt mv <old-name> <new-name>`      | 修改仓库内包的名称               |
+| 删除包     | `wt rm <package name>`             | 永久移除仓库中的指定包             |
 
 ---
 
 ## 权限管理
 
-> 为了实现多人使用时的精细化控制，使用token进行不同权限的验证
+采用极简的 **三级 Token 权限体系**，无需用户注册登录，通过配置文件中的 Token 验证操作权限，未配置对应有效 Token 会直接拒绝操作。
 
-这里分成三种权限
-
-1. Read -> search list info
-2. Install -> install
-3. Write -> upload replace mv rm tag
-
-> 权限通过配置文件中的token进行控制， 如果客户端的配置文件中没有正确的token, 则会导致相应的操作失败
+| 权限等级    | 可执行操作                              | 适用场景        |
+| ------- | ---------------------------------- | ----------- |
+| Read    | `search`、`list`、`info`             | 仅允许查看仓库内容   |
+| Install | `install`                          | 允许下载使用仓库中的包 |
+| Write   | `upload`、`replace`、`mv`、`rm`、`tag` | 允许管理和修改仓库内容 |
 
 ---
 
 ## 配置文件
 
-- Client 端的配置文件是 ~/.config/water-repo/client_config.json
+### 客户端配置
+
+路径：`~/.config/water-repo/client_config.json`
 
 ```json
 {
-    "server": "服务器ip:端口"
-
-    "read_timeout": "读取的超时时间",
-    "install_timeout": "下载的超时时间",
-    "write_timeout": "写入超时时间",
-
-    "read_token": "具体的阅读权限token",
-    "install_token": "具体的下载token",
-    "write_token": "具体的写入权限token"
-
+    "server": "服务器IP:端口",
+    "read_timeout": "10s",
+    "install_timeout": "30m",
+    "write_timeout": "30s",
+    "read_token": "你的阅读权限Token",
+    "install_token": "你的下载权限Token",
+    "write_token": "你的写入权限Token"
 }
 ```
 
-- Server 端的配置文件是 ~/.config/water-repo/server_config.json
+### 服务端配置
+
+路径：`~/.config/water-repo/server_config.json`
 
 ```json
 {
-    "server": "服务器ip:端口",
-    
-    "read_timeout": "读取超时时间",
-    "write_timeout": "写入超时时间",
-    "install_timeout": "下载超时时间",
-
+    "server": ":8080",
+    "read_timeout": "15s",
+    "write_timeout": "30s",
+    "install_timeout": "1h",
     "read_token": [
-        "阅读token1",
-        "阅读token2",
-        ...
+        "全局阅读Token1",
+        "全局阅读Token2"
     ],
     "install_token": [
-        "下载token1",
-        ...
+        "全局下载Token1"
     ],
     "write_token": [
-        "写入token1",
-        ...
+        "管理员写入Token1"
     ]
 }
 ```
 
 ---
 
-## 进阶用法 TODO
+## 进阶用法：标签管理
 
-### tag 管理
+通过 **标签（Tag）** 对仓库内的包进行逻辑分类，替代复杂的目录结构和命名空间，所有包必须归属且仅归属一个标签。
 
-> 为了管理不同类型的包，加入了 `tag` 这个属性， 可以根据tag来进行整理和分离
+系统默认内置两个不可删除的系统标签：
 
-- 默认带有 `static` 和 `temp` 两种tag来区别临时文件和持久文件, 这两种标签不可删除
+- `temp`：临时文件标签，所有上传的包默认归属此标签
+- `static`：持久文件标签，用于存放长期使用的静态资源
 
-- 使用下面的方法列出 tag 为 target tag 的所有包
+### 标签操作命令
 
-```bash
-wt list <target tag> 
-```
-
-- 使用upload上传的包的tag默认是`temp`, 可以通过以下方法修改标签
-
-```bash
-wt tag <package name> <target tag>
-```
-
-- 添加新的标签
-
-```bash
-wt tag add <tag name>
-```
-
-- 删除标签
-
-```bash
-wt tag rm <tag name>
-```
-
-> 标签被删除之后， 原来属于这个标签的所有包都会变成 `temp` 标签
-
-- 清理所有 tag 为 target tag 的包 **慎用!!!**
-
-```bash
-wt clear <target tag>
-```
+| 操作场景        | 命令示例                                 | 说明                                |
+| ----------- | ------------------------------------ | --------------------------------- |
+| 列出指定标签的所有包  | `wt list <target-tag>`               | 展示归属该标签的全部包                       |
+| 修改包的标签      | `wt tag <package name> <target-tag>` | 将指定包移动到目标标签下                      |
+| 新增自定义标签     | `wt tag add <tag-name>`              | 创建新的分类标签                          |
+| 删除自定义标签     | `wt tag rm <tag-name>`               | 删除指定标签；原归属该标签的所有包会自动回退到 `temp` 标签 |
+| 批量清理标签下的所有包 | `wt clear <target-tag>`              | **高危操作！** 永久删除该标签下的所有包，不可恢复       |
 
 ---
+
+## 🚧 开发中功能
+
+以下功能正在开发中，将在后续版本中陆续上线，现有配置文件和核心命令保持完全向后兼容。
+
+### 核心待实现（下一版本）
+
+1. **按标签的细粒度权限控制**
+   
+   - 基于现有标签系统扩展，无需引入复杂的角色和用户体系
+   - 支持为每个标签单独配置 Read/Install/Write 权限 Token
+   - 标签权限优先级高于全局权限，实现"不同人管理不同分类的包"
+   - 示例：前端组仅拥有 `frontend` 标签的写入权限，后端组仅拥有 `backend` 标签的写入权限
+
+2. **动态镜像源管理**
+   
+   - 支持添加多个远程 wt 服务端作为镜像源
+   - 搜索时自动并行查询所有镜像源，合并返回结果
+   - 下载时自动选择最快的可用源，失败自动切换到其他源
+   - 提供 `wt mirror add/remove/list` 命令管理镜像源
+
+3. **局域网自动发现**
+   
+   - 服务端启动后自动广播自身存在
+   - 客户端自动发现同一局域网内所有运行中的 wt 服务端
+   - 发现的节点自动加入镜像源列表，无需手动配置
+   - 支持一键关闭自动发现功能
+
+### 规划中功能
+
+1. **`wt install-tag` 批量下载**：一条命令下载指定标签下的所有包
+2. **`wt public` 一键公开分享**：将指定包公开给整个局域网，任何人无需配置 Token 即可下载
+3. **下载进度显示**：命令行实时显示下载速度和进度条
+4. **断点续传**：支持大文件断点续传，中断后无需重新下载
+5. **`wt config` 配置管理命令**：无需手动编辑 JSON 文件，通过命令行修改配置
