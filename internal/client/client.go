@@ -284,6 +284,21 @@ func mvRequest(oldName string, newName string) (err error) {
 	return
 }
 
+func replaceRequest(pkgName string, filePath string) (err error) {
+	tempName := filepath.Base(filePath) + ".temp"
+	err = uploadRequest(filePath, tempName)
+	if err != nil {
+		return
+	}
+
+	err = mvRequest(tempName, pkgName)
+	if err != nil {
+		_ = rmRequest(tempName)
+		return
+	}
+	return
+}
+
 func syncRequest() (err error) {
 	val := url.Values{}
 	apiRsp, err := doRequest(http.MethodPut, "/sync", val, model.WTWrite, nil)
@@ -297,6 +312,27 @@ func syncRequest() (err error) {
 	fmt.Println(string(jsonData))
 
 	return nil
+}
+
+func rmRequest(pkgName string) (err error) {
+	if isEmpty(pkgName) {
+		return fmt.Errorf("missing pkg name")
+	}
+
+	val := url.Values{}
+	val.Set("name", pkgName)
+	apiRsp, err := doRequest(http.MethodDelete, "/rm", val, model.WTWrite, nil)
+	if err != nil {
+		return
+	}
+
+	slog.Debug(apiRsp.Message, "func", "rmRequest")
+
+	jsonData, _ := json.Marshal(apiRsp.Data)
+
+	fmt.Println(string(jsonData))
+
+	return
 }
 
 func doRequest(
@@ -378,12 +414,6 @@ func ClientMain(args []string) {
 		}
 		return
 	}
-	if len(args) < 3 {
-		fmt.Println(commonpresets.HelpManual)
-
-		fmt.Println("at least 2 parameters")
-	}
-
 	if command == "--help" || command == "-h" || command == "help" {
 		fmt.Println(commonpresets.HelpManual)
 		return
@@ -405,22 +435,28 @@ func ClientMain(args []string) {
 			err = uploadRequest(args[FirstTargetIndex], "")
 		}
 
-	// case "replace":
-	// 	if len(args) < 4 {
-	// 		fmt.Println("Usage: wt replace <package name> <path to your new package>")
-	// 		return
-	// 	}
-	// 	replaceRequest(args[2], args[3])
+	case "replace":
+		if len(args) < 4 {
+			fmt.Println("Usage: wt replace <package name> <path to your new package>")
+			return
+		}
+		err = replaceRequest(args[FirstTargetIndex], args[SecondTargetIndex])
 	case "mv":
 		if len(args) < 4 {
 			fmt.Println("Usage: wt mv <package name> <new package name>")
 			return
 		}
-		err = mvRequest(args[2], args[3])
-		// case "rm":
-		// 	rmRequest(args[2])
+		err = mvRequest(args[FirstTargetIndex], args[SecondTargetIndex])
+	case "rm":
+		err = rmRequest(args[2])
 	case "list":
-		err := listRequest(args[2])
+		var targetTag string
+		if len(args) < 3 {
+			targetTag = commonpresets.DefaultTagTemp
+		} else {
+			targetTag = args[FirstTargetIndex]
+		}
+		err := listRequest(targetTag)
 		if err != nil {
 			fmt.Println("exec command fail: ", err)
 		}

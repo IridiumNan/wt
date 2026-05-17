@@ -141,11 +141,12 @@ func RenamePackage(oldName string, newName string) (err error) {
 }
 
 // DeletePackageByName : delete single package
-func DeletePackageByName(pkgName string) {
+func DeletePackageByName(pkgName string) (err error) {
 	// delet real pkg
-	err := os.Remove(pkgName)
+	err = os.Remove(pkgName)
 	if err != nil {
 		slog.Error("error whne remove file", "func", "memory.DeletePackageByName")
+		return
 	}
 
 	MapLock.Lock()
@@ -168,6 +169,8 @@ func DeletePackageByName(pkgName string) {
 	if err != nil {
 		panic(err)
 	}
+
+	return
 }
 
 // ListPackagesByTag : return the NameList by tag

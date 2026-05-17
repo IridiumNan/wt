@@ -249,7 +249,7 @@ func mvHandler(w http.ResponseWriter, r *http.Request) {
 			httphelper.SendJSONResponse(
 				w,
 				http.StatusNotFound,
-				model.NotFoundResponse("package "+oldName+"not found"),
+				model.NotFoundResponse("package "+oldName+" not found"),
 			)
 			return
 		}
@@ -271,6 +271,61 @@ func mvHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func rmHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	data := r.URL.Query()
+	tokenHeadName := config.GetTokenHeadName(model.WTWrite)
+
+	errMsg := "has no access to rm"
+	auth := model.Auth{
+		WtMethod: model.WTWrite,
+		Token:    r.Header.Get(tokenHeadName),
+		ErrMsg:   errMsg,
+	}
+
+	if !isAccess(auth) {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusForbidden,
+			model.ForbiddenResponse(errMsg),
+		)
+		return
+	}
+
+	pkgName := data.Get("name")
+	slog.Debug("pkgName to rm ", "name", pkgName)
+
+	if pkgName == "" {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusBadRequest,
+			model.BadRequestResponse("package name reqired"),
+		)
+		return
+	}
+
+	err := store.DeletePackageByName(pkgName)
+	if err != nil {
+		if os.IsNotExist(err) {
+			httphelper.SendJSONResponse(
+				w,
+				http.StatusNotFound,
+				model.NotFoundResponse("package "+pkgName+" not found"),
+			)
+			return
+		}
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusInternalServerError,
+			model.InternalErrorResponse("error: "+err.Error()),
+		)
+		return
+	}
+
+	httphelper.SendJSONResponse(
+		w,
+		http.StatusOK,
+		model.SuccessfulResponse("rm the "+pkgName+" success", ""),
+	)
 }
 
 func listHandler(w http.ResponseWriter, r *http.Request) {
