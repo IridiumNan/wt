@@ -26,7 +26,6 @@ func queryClientConfig() {
 		InstallToken: queryClientToken(querypresets.ClientInstallTokenQuery),
 		WriteToken:   queryClientToken(querypresets.ClientWriteTokenQuery),
 	}
-	return
 }
 
 func writeClientConfig(configPath string) (err error) {
@@ -60,12 +59,12 @@ func writeClientConfig(configPath string) (err error) {
 
 // InitClientConfig : init the client config
 func InitClientConfig() (err error) {
-	clientConfig, err = loadClientConfig()
+	err = loadClientConfig()
 	return
 }
 
 // loadClientConfig : the client config from file
-func loadClientConfig() (clientConfig *model.ClientConfig, err error) {
+func loadClientConfig() (err error) {
 	configPath, err := getClientConfigPath()
 	if err != nil {
 		return
@@ -78,11 +77,11 @@ func loadClientConfig() (clientConfig *model.ClientConfig, err error) {
 
 	// read the config file
 	data, err := os.ReadFile(configPath)
-	clientConfig = &model.ClientConfig{}
 	if os.IsNotExist(err) {
 		fmt.Println("expected config file: ", configPath)
 		fmt.Printf("client config file not exsit, begin to init...\n\n")
 		queryClientConfig()
+		fmt.Println("config content", clientConfig)
 		err = writeClientConfig(configPath)
 		if err != nil {
 			panic(err)
@@ -90,6 +89,7 @@ func loadClientConfig() (clientConfig *model.ClientConfig, err error) {
 		return
 	}
 
+	clientConfig = &model.ClientConfig{}
 	err = json.Unmarshal(data, clientConfig)
 	if err != nil {
 		fmt.Println("err when Unmarshal", err)
@@ -99,4 +99,45 @@ func loadClientConfig() (clientConfig *model.ClientConfig, err error) {
 	slog.Debug("load config from" + configPath)
 	slog.Debug(string(data))
 	return
+}
+
+func AlterClientConfig(key string, value string) (err error) {
+	switch key {
+	case "server":
+		clientConfig.Server = value
+	case "read_token":
+		clientConfig.ReadToken = value
+	case "install_token":
+		clientConfig.InstallToken = value
+	case "write_token":
+		clientConfig.WriteToken = value
+	default:
+		err = fmt.Errorf("unknow element or element not allow to alter :%s", key)
+		return
+	}
+
+	configPath, _ := getClientConfigPath()
+	err = writeClientConfig(configPath)
+	if err != nil {
+		return
+	}
+
+	fmt.Println("alter the ", key, " -> ", value, " successfully")
+
+	return
+}
+
+func ClientConfigShow() {
+	fmt.Println("-------------- client config ------------------")
+	clientCOnfigPath, _ := getClientConfigPath()
+	fmt.Println("config file :", clientCOnfigPath)
+	fmt.Println("-------------- config content -----------------")
+	fmt.Println("default server:", GetServerAddr(model.WTClient))
+	fmt.Println("read_token:", GetToken(model.WTRead))
+	fmt.Println("install_token:", GetToken(model.WTInstall))
+	fmt.Println("write_token:", GetToken(model.WTWrite))
+	fmt.Println("------------------------------------------------")
+
+	fmt.Println("you can config any element by Usage: wt config element value")
+	fmt.Println("example: wt config read_token fowehgiqwojfaoinhgvaoij")
 }

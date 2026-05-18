@@ -5,8 +5,8 @@ import "gitee.com/cai-zixiang_hainan/wt/internal/model"
 
 var ClientHostPortQuery = model.Query{
 	Head:    ">>set the server -> host:port<<",
-	Example: "192.168.1.2:12212",
-	Default: "192.168.1.2:12212",
+	Example: "http://192.168.1.2:12212",
+	Default: "http://192.168.1.2:12212",
 }
 
 var ClientReadTimeoutQuery = model.Query{

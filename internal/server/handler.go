@@ -11,7 +11,6 @@ import (
 
 	"gitee.com/cai-zixiang_hainan/wt/internal/config"
 	"gitee.com/cai-zixiang_hainan/wt/internal/model"
-	"gitee.com/cai-zixiang_hainan/wt/internal/presets/commonpresets"
 	"gitee.com/cai-zixiang_hainan/wt/internal/store"
 	"gitee.com/cai-zixiang_hainan/wt/pkg/httphelper"
 )
@@ -113,7 +112,7 @@ func installHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filePath := filepath.Join(commonpresets.DataDir, pkgName)
+	filePath := filepath.Join(config.DataDir, pkgName)
 
 	http.ServeFile(w, r, filePath)
 }
@@ -181,7 +180,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		fileName = filePart.FormName()
 	}
 
-	savePath := filepath.Join(commonpresets.DataDir, fileName)
+	savePath := filepath.Join(config.DataDir, fileName)
 	dst, err := os.Create(savePath)
 	if err != nil {
 		httphelper.SendJSONResponse(w, http.StatusInternalServerError, model.InternalErrorResponse("fail to create file:"+savePath))
@@ -242,8 +241,8 @@ func mvHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	oldPath := filepath.Join(commonpresets.DataDir, oldName)
-	newPath := filepath.Join(commonpresets.DataDir, newName)
+	oldPath := filepath.Join(config.DataDir, oldName)
+	newPath := filepath.Join(config.DataDir, newName)
 	if err := os.Rename(oldPath, newPath); err != nil {
 		if os.IsNotExist(err) {
 			httphelper.SendJSONResponse(

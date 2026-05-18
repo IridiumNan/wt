@@ -5,28 +5,28 @@ import (
 	"fmt"
 	"os"
 
-	"gitee.com/cai-zixiang_hainan/wt/internal/client"
-	"gitee.com/cai-zixiang_hainan/wt/internal/config"
-	"gitee.com/cai-zixiang_hainan/wt/pkg/loghelper"
+	"gitee.com/cai-zixiang_hainan/wt/internal/command"
+	"gitee.com/cai-zixiang_hainan/wt/internal/store"
 )
 
 const (
-	DEBUG   = false
+	DEBUG   = true
 	VERSION = "0.0.1"
+	CMDINX  = 1
 )
-
-func init() {
-	loghelper.JSONLog(DEBUG)
-}
 
 func main() {
 	args := os.Args
 
-	err := config.InitClientConfig()
-	if err != nil {
-		fmt.Println(err)
-		return
+	switch args[CMDINX] {
+	case "uninstall":
+		err := store.Uninstall()
+		if err != nil {
+			fmt.Println("error when uninstall: ", err)
+		}
+	case "server", "serve":
+		command.ServerMain(args[CMDINX:], DEBUG)
+	default:
+		command.ClientMain(args[CMDINX:], DEBUG)
 	}
-
-	client.ClientMain(args)
 }

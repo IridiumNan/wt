@@ -15,21 +15,13 @@ import (
 
 	"gitee.com/cai-zixiang_hainan/wt/internal/config"
 	"gitee.com/cai-zixiang_hainan/wt/internal/model"
-	"gitee.com/cai-zixiang_hainan/wt/internal/presets/commonpresets"
-)
-
-const (
-	URLPrefix         = "http://"
-	CommandIndex      = 1
-	FirstTargetIndex  = 2
-	SecondTargetIndex = 3
 )
 
 func isEmpty(target string) bool {
 	return target == ""
 }
 
-func searchRequest(pattern string) (err error) {
+func SearchRequest(pattern string) (err error) {
 	if isEmpty(pattern) {
 		err = errors.New("empty pkg name for wt search")
 		return
@@ -59,7 +51,7 @@ func searchRequest(pattern string) (err error) {
 	return
 }
 
-func infoRequest(pkgName string) (err error) {
+func InfoRequest(pkgName string) (err error) {
 	if isEmpty(pkgName) {
 		err = errors.New("empty pkg name for wt info")
 		return
@@ -102,7 +94,7 @@ func infoRequest(pkgName string) (err error) {
 	return
 }
 
-func installRequest(pkgName string) (err error) {
+func InstallRequest(pkgName string) (err error) {
 	if isEmpty(pkgName) {
 		err = errors.New("empty pkg name for wt install")
 		return
@@ -113,7 +105,7 @@ func installRequest(pkgName string) (err error) {
 
 	endpoint := "/install"
 
-	fullURL := URLPrefix + config.GetServerAddr(model.WTClient) + endpoint
+	fullURL := config.GetServerAddr(model.WTClient) + endpoint
 	fullURL += "?" + val.Encode()
 
 	token := config.GetToken(model.WTInstall)
@@ -163,7 +155,7 @@ func installRequest(pkgName string) (err error) {
 	return nil
 }
 
-func listRequest(targetTag string) (err error) {
+func ListRequest(targetTag string) (err error) {
 	if isEmpty(targetTag) {
 		err = errors.New("empty target tag for wt list")
 		return
@@ -195,7 +187,7 @@ func listRequest(targetTag string) (err error) {
 	return
 }
 
-func uploadRequest(filePath string, pkgName string) (err error) {
+func UploadRequest(filePath string, pkgName string) (err error) {
 	if isEmpty(filePath) {
 		return errors.New("can not assign empty file path")
 	}
@@ -228,7 +220,7 @@ func uploadRequest(filePath string, pkgName string) (err error) {
 
 	writer.Close()
 
-	fullURL := URLPrefix + config.GetServerAddr(model.WTClient) + "/upload"
+	fullURL := config.GetServerAddr(model.WTClient) + "/upload"
 	token := config.GetToken(model.WTWrite)
 	timeout := config.GetTimeout(model.WTClient, model.WTWrite)
 
@@ -260,7 +252,7 @@ func uploadRequest(filePath string, pkgName string) (err error) {
 	return nil
 }
 
-func mvRequest(oldName string, newName string) (err error) {
+func MvRequest(oldName string, newName string) (err error) {
 	if isEmpty(oldName) || isEmpty(newName) {
 		return fmt.Errorf("missing old name or new name")
 	}
@@ -284,22 +276,22 @@ func mvRequest(oldName string, newName string) (err error) {
 	return
 }
 
-func replaceRequest(pkgName string, filePath string) (err error) {
+func ReplaceRequest(pkgName string, filePath string) (err error) {
 	tempName := filepath.Base(filePath) + ".temp"
-	err = uploadRequest(filePath, tempName)
+	err = UploadRequest(filePath, tempName)
 	if err != nil {
 		return
 	}
 
-	err = mvRequest(tempName, pkgName)
+	err = MvRequest(tempName, pkgName)
 	if err != nil {
-		_ = rmRequest(tempName)
+		_ = RmRequest(tempName)
 		return
 	}
 	return
 }
 
-func syncRequest() (err error) {
+func SyncRequest() (err error) {
 	val := url.Values{}
 	apiRsp, err := doRequest(http.MethodPut, "/sync", val, model.WTWrite, nil)
 	if err != nil {
@@ -314,7 +306,7 @@ func syncRequest() (err error) {
 	return nil
 }
 
-func rmRequest(pkgName string) (err error) {
+func RmRequest(pkgName string) (err error) {
 	if isEmpty(pkgName) {
 		return fmt.Errorf("missing pkg name")
 	}
@@ -343,7 +335,7 @@ func doRequest(
 	body io.Reader,
 ) (apiRsp *model.APIResponse, err error) {
 	// concate full url
-	fullURL := URLPrefix + config.GetServerAddr(model.WTClient) + endpoint
+	fullURL := config.GetServerAddr(model.WTClient) + endpoint
 	if queryParams != nil {
 		fullURL += "?" + queryParams.Encode()
 	}
@@ -374,6 +366,9 @@ func doRequest(
 	}
 
 	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("do request err :\nreponse : %v\nerr : %w", resp, err)
+	}
 
 	// Must close the response.Body
 	defer func() {
@@ -402,69 +397,4 @@ func doRequest(
 	}
 
 	return &apiResp, nil
-}
-
-func ClientMain(args []string) {
-	command := args[CommandIndex]
-
-	if command == "sync" {
-		err := syncRequest()
-		if err != nil {
-			fmt.Println("exec command ", command, " fail :", err)
-		}
-		return
-	}
-	if command == "--help" || command == "-h" || command == "help" {
-		fmt.Println(commonpresets.HelpManual)
-		return
-	}
-	var err error
-	switch command {
-	case "--help", "-h", "help":
-		fmt.Println(commonpresets.HelpManual)
-	case "search":
-		err = searchRequest(args[FirstTargetIndex])
-	case "info":
-		err = infoRequest(args[FirstTargetIndex])
-	case "install":
-		err = installRequest(args[FirstTargetIndex])
-	case "upload":
-		if len(args) >= 4 {
-			err = uploadRequest(args[FirstTargetIndex], args[SecondTargetIndex])
-		} else {
-			err = uploadRequest(args[FirstTargetIndex], "")
-		}
-
-	case "replace":
-		if len(args) < 4 {
-			fmt.Println("Usage: wt replace <package name> <path to your new package>")
-			return
-		}
-		err = replaceRequest(args[FirstTargetIndex], args[SecondTargetIndex])
-	case "mv":
-		if len(args) < 4 {
-			fmt.Println("Usage: wt mv <package name> <new package name>")
-			return
-		}
-		err = mvRequest(args[FirstTargetIndex], args[SecondTargetIndex])
-	case "rm":
-		err = rmRequest(args[2])
-	case "list":
-		var targetTag string
-		if len(args) < 3 {
-			targetTag = commonpresets.DefaultTagTemp
-		} else {
-			targetTag = args[FirstTargetIndex]
-		}
-		err := listRequest(targetTag)
-		if err != nil {
-			fmt.Println("exec command fail: ", err)
-		}
-	default:
-		fmt.Println(commonpresets.HelpManual)
-	}
-
-	if err != nil {
-		fmt.Println("exec command ", command, " fail :", err)
-	}
 }

@@ -79,8 +79,8 @@ func loadServerConfig() (config *model.ServerConfig, err error) {
 	}
 
 	configDir := filepath.Dir(configPath)
-	if mkDirErr := os.MkdirAll(configDir, 0o755); mkDirErr != nil {
-		err = mkDirErr
+	slog.Debug("mk the config dir", "dir", configDir, "configPath", configPath)
+	if err = os.MkdirAll(configDir, 0o755); err != nil {
 		return
 	}
 
@@ -108,5 +108,58 @@ func loadServerConfig() (config *model.ServerConfig, err error) {
 	}
 
 	slog.Debug("load config...", "config Path", configPath, "config content", string(data))
+	return
+}
+
+func ServerConfigShow() {
+	fmt.Println("----------------- server config ---------------")
+	configPath, _ := getServerConfigPath()
+	fmt.Println("config file: ", configPath)
+	fmt.Println("----------------- config content ---------------")
+	fmt.Println("server: ", serverConfig.Server)
+	fmt.Println("read_token: ", serverConfig.ReadToken)
+	fmt.Println("install_token: ", serverConfig.InstallToken)
+	fmt.Println("write_token: ", serverConfig.WriteToken)
+	fmt.Println("-------------------------------------------------")
+	fmt.Println("you can alter the config manually by edit the configPath and restart the server")
+}
+
+func AddToken(token string, wtMethod model.WTMethod) (err error) {
+	switch wtMethod {
+	case model.WTRead:
+		serverConfig.ReadToken = append(serverConfig.ReadToken, token)
+	case model.WTInstall:
+		serverConfig.InstallToken = append(serverConfig.InstallToken, token)
+	case model.WTWrite:
+		serverConfig.WriteToken = append(serverConfig.WriteToken, token)
+	}
+
+	configPath, _ := getServerConfigPath()
+	err = writeServerConfig(configPath)
+
+	return
+}
+
+func AlterServerConfig(object string, operation string, value string) (err error) {
+	if operation == "add" {
+		switch object {
+		case "read_token":
+			err = AddToken(value, model.WTRead)
+			if err == nil {
+				fmt.Println("add read_token :", value)
+			}
+		case "install_token":
+			err = AddToken(value, model.WTInstall)
+			if err == nil {
+				fmt.Println("add install_token :", value)
+			}
+		case "write_token":
+			err = AddToken(value, model.WTWrite)
+			if err == nil {
+				fmt.Println("add write_token :", value)
+			}
+		}
+	}
+
 	return
 }

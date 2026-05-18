@@ -5,20 +5,20 @@ import (
 	"log/slog"
 	"os"
 
+	"gitee.com/cai-zixiang_hainan/wt/internal/config"
 	"gitee.com/cai-zixiang_hainan/wt/internal/model"
-	"gitee.com/cai-zixiang_hainan/wt/internal/presets/commonpresets"
 )
 
 // writeMetaData : atomically the byteData to MetaDataPath
 func writeMetaData(byteData []byte) (err error) {
-	tempPath := commonpresets.MetaDataFile + ".tmp"
+	tempPath := config.MetaDataPath + ".tmp"
 	tempFile, err := os.OpenFile(
 		tempPath,
 		os.O_CREATE|os.O_TRUNC|os.O_WRONLY,
 		0o644,
 	)
 	if err != nil {
-		slog.Error("fail to open tempFIle", "tempFile", tempFile, "err", err)
+		slog.Error("fail to open tempFile", "tempFile", tempFile, "err", err)
 	}
 
 	_, err = tempFile.Write(byteData)
@@ -33,7 +33,7 @@ func writeMetaData(byteData []byte) (err error) {
 		panic(err)
 	}
 
-	err = os.Rename(tempPath, commonpresets.MetaDataFile)
+	err = os.Rename(tempPath, config.MetaDataPath)
 	if err != nil {
 		panic(err)
 	}
@@ -42,10 +42,38 @@ func writeMetaData(byteData []byte) (err error) {
 }
 
 // sync the meta data to file
-func syncMetaData(metaData *model.MetaData) (err error) {
+func syncMetaDataToFile(metaData *model.MetaData) (err error) {
 	byteData, _ := json.MarshalIndent(metaData, "", "	")
 
 	err = writeMetaData(byteData)
 
 	return
+}
+
+// sync new package from disk
+func SyncMetaDataFromDisk() {
+	dir, err := os.ReadDir(config.DataDir)
+	if err != nil {
+		slog.Error(
+			"fial to read data dir",
+			"dir", config.DataDir,
+			"err", err,
+		)
+		return
+	}
+
+	for _, entry := range dir {
+		info, _ := entry.Info()
+		// skip dir
+		if info.IsDir() {
+			continue
+		}
+		// skip exsit pkg
+		for pkgName := range metaData.DataMap {
+			if info.Name() == pkgName {
+				continue
+			}
+		}
+		AddPackage(info)
+	}
 }
