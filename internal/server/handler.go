@@ -181,8 +181,25 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	savePath := filepath.Join(config.DataDir, fileName)
+
+	backupPath := ""
+	if _, err := os.Stat(savePath); err == nil {
+		slog.Info("Package exist try to replace", "packageName", fileName)
+
+		backupPath = savePath + ".bak"
+		if err = os.Rename(savePath, backupPath); err != nil {
+			slog.Warn("fail to rename old package to backup package", "error", err)
+		}
+	}
+
 	dst, err := os.Create(savePath)
 	if err != nil {
+		if _, err = os.Stat(backupPath); err == nil {
+			err = os.Rename(backupPath, savePath)
+			if err != nil {
+				slog.Info("recover the old package successfully", "pkgName", fileName)
+			}
+		}
 		httphelper.SendJSONResponse(w, http.StatusInternalServerError, model.InternalErrorResponse("fail to create file:"+savePath))
 		return
 	}
@@ -191,7 +208,24 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 
 	written, err := io.Copy(dst, filePart)
 	if err != nil {
+		dst.Close()
+		os.Remove(savePath)
+
+		if backupPath != "" {
+			if rollbakErr := os.Rename(backupPath, savePath); rollbakErr == nil {
+				slog.Info("recover old package after write failure", "pkgName", fileName)
+			}
+		}
 		httphelper.SendJSONResponse(w, http.StatusInternalServerError, model.InternalErrorResponse("fail to write file:"+savePath))
+		return
+	}
+
+	if _, err = os.Stat(backupPath); err == nil {
+		slog.Info("found backup file, try to remove", "backupName", backupPath)
+		err = os.Remove(backupPath)
+		if err != nil {
+			slog.Error("fail to remove backup file", "err", err.Error())
+		}
 	}
 
 	// Step 6: Update metadata
@@ -394,7 +428,6 @@ func syncHandler(w http.ResponseWriter, r *http.Request) {
 			http.StatusForbidden,
 			model.ForbiddenResponse(errMsg),
 		)
-		slog.Debug("check over")
 		return
 	}
 

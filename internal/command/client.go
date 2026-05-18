@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"log/slog"
 
 	"gitee.com/cai-zixiang_hainan/wt/internal/client"
 	"gitee.com/cai-zixiang_hainan/wt/internal/config"
@@ -37,10 +38,6 @@ func Usage(command string) {
 		fmt.Println("  Example: wt upload ./build/app.tar.gz")
 		fmt.Println("  Example: wt upload ./build/app.tar.gz my-app-v1")
 
-	case "replace":
-		fmt.Println("  wt replace <package-name> <file-path>")
-		fmt.Println("  Example: wt replace my-app-v1 ./build/app-v2.tar.gz")
-
 	case "mv":
 		fmt.Println("  wt mv <old-name> <new-name>")
 		fmt.Println("  Example: wt mv my-app-v1 my-app-v2")
@@ -69,7 +66,6 @@ func Usage(command string) {
 		fmt.Println("  info     - Show package information")
 		fmt.Println("  install  - Download and install a package")
 		fmt.Println("  upload   - Upload a package to server")
-		fmt.Println("  replace  - Replace an existing package")
 		fmt.Println("  mv       - Rename a package")
 		fmt.Println("  rm       - Remove a package")
 		fmt.Println("  list     - List packages by tag")
@@ -118,11 +114,20 @@ func handleOneTarget(command string, args []string) (err error) {
 	case "upload":
 		err = client.UploadRequest(firstTarget, "")
 		Done = true
-	case "config":
+	case "config", "-c":
 		if firstTarget == "show" {
 			config.ClientConfigShow()
 			Done = true
 		}
+	case "help", "--help", "-h":
+		if firstTarget == "simple" {
+			fmt.Println(SimpleManual)
+		} else if firstTarget == "advance" {
+			fmt.Println(AdvanceManual)
+		} else {
+			fmt.Print(DefaultManual)
+		}
+		Done = true
 	}
 
 	return
@@ -136,9 +141,9 @@ func handleTwoTarget(command string, args []string) (err error) {
 	case "upload":
 		err = client.UploadRequest(firstTarget, secondTarget)
 		Done = true
-	case "replace":
-		err = client.ReplaceRequest(firstTarget, secondTarget)
-		Done = true
+	// case "replace":
+	// 	err = client.ReplaceRequest(firstTarget, secondTarget)
+	// 	Done = true
 	case "mv":
 		err = client.MvRequest(firstTarget, secondTarget)
 		Done = true
@@ -150,36 +155,37 @@ func handleTwoTarget(command string, args []string) (err error) {
 }
 
 func ClientMain(args []string, debug bool) {
-    loghelper.InitClientLogger(debug)
+	loghelper.InitClientLogger(debug)
 
-    err := config.InitClientConfig()
-    if err != nil {
-        fmt.Println(err)
-        return
-    }
+	err := config.InitClientConfig()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-    command := args[CommandIndex]
-    args = args[1:]
+	command := args[CommandIndex]
+	slog.Debug("client exec command", "command", command)
+	args = args[1:]
 
-    switch len(args) {
-    case 0:
-        err = handleZeroTarget(command)
-    case 1:
-        err = handleOneTarget(command, args)
-    case 2:
-        err = handleTwoTarget(command, args)
-    default:
-        fmt.Printf("too many arguments for command %s\n", command)
-        Usage(command)
-        return
-    }
+	switch len(args) {
+	case 0:
+		err = handleZeroTarget(command)
+	case 1:
+		err = handleOneTarget(command, args)
+	case 2:
+		err = handleTwoTarget(command, args)
+	default:
+		fmt.Printf("too many arguments for command %s\n", command)
+		Usage(command)
+		return
+	}
 
-    if err != nil {
-        fmt.Println("fail to exec ", command, " err :", err.Error())
-        Usage(command)
-    }
-    if !Done {
-        fmt.Println("Bad Usage")
-        Usage(command)
-    }
+	if err != nil {
+		fmt.Println("fail to exec ", command, " err :", err.Error())
+		Usage(command)
+	}
+	if !Done {
+		fmt.Println("Bad Usage")
+		Usage(command)
+	}
 }

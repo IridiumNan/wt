@@ -72,7 +72,7 @@ func InitServerConfig() (err error) {
 }
 
 func loadServerConfig() (config *model.ServerConfig, err error) {
-	configPath, pathErr := getServerConfigPath()
+	configPath, pathErr := GetServerConfigPath()
 	if pathErr != nil {
 		err = pathErr
 		return
@@ -113,7 +113,7 @@ func loadServerConfig() (config *model.ServerConfig, err error) {
 
 func ServerConfigShow() {
 	fmt.Println("----------------- server config ---------------")
-	configPath, _ := getServerConfigPath()
+	configPath, _ := GetServerConfigPath()
 	fmt.Println("config file: ", configPath)
 	fmt.Println("----------------- config content ---------------")
 	fmt.Println("server: ", serverConfig.Server)
@@ -134,7 +134,7 @@ func AddToken(token string, wtMethod model.WTMethod) (err error) {
 		serverConfig.WriteToken = append(serverConfig.WriteToken, token)
 	}
 
-	configPath, _ := getServerConfigPath()
+	configPath, _ := GetServerConfigPath()
 	err = writeServerConfig(configPath)
 
 	return

@@ -4,9 +4,11 @@ package store
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -76,6 +78,20 @@ func UpdateTag(pkgName string, newTag string) (err error) {
 func AddPackage(info fs.FileInfo) {
 	MapLock.Lock()
 	defer MapLock.Unlock()
+
+	if oldPkg, exist := metaData.DataMap[info.Name()]; exist {
+		oldTag := oldPkg.Tag
+		if nameList, ok := metaData.TagMap[oldTag]; ok {
+			var newNameList []string
+			for _, n := range nameList {
+				if n != oldPkg.Name {
+					newNameList = append(newNameList, n)
+				}
+			}
+			metaData.TagMap[oldTag] = newNameList
+		}
+	}
+
 	metaData.DataMap[info.Name()] = getDefaultPackage(info)
 	metaData.TagMap[config.DefaultTagTemp] = append(metaData.TagMap[config.DefaultTagTemp], info.Name())
 
@@ -115,9 +131,10 @@ func RenamePackage(oldName string, newName string) (err error) {
 // DeletePackageByName : delete single package
 func DeletePackageByName(pkgName string) (err error) {
 	// delet real pkg
-	err = os.Remove(pkgName)
+	pkgPath := filepath.Join(config.DataDir, pkgName)
+	err = os.Remove(pkgPath)
 	if err != nil {
-		slog.Error("error whne remove file", "func", "memory.DeletePackageByName")
+		slog.Debug("error when remove file", "func", "memory.DeletePackageByName", "error", err)
 		return
 	}
 
@@ -151,7 +168,9 @@ func ListPackagesByTag(targetTag string) (nameList []string) {
 	defer MapLock.RUnlock()
 
 	nameList = metaData.TagMap[targetTag]
+	slog.Debug("check tagMap", "map", fmt.Sprint(metaData.TagMap))
 
+	slog.Debug("List package by tag", "tag", targetTag, "found_res", nameList)
 	if len(nameList) == 0 {
 		return nil
 	}

@@ -65,7 +65,7 @@ func InitClientConfig() (err error) {
 
 // loadClientConfig : the client config from file
 func loadClientConfig() (err error) {
-	configPath, err := getClientConfigPath()
+	configPath, err := GetClientConfigPath()
 	if err != nil {
 		return
 	}
@@ -116,7 +116,7 @@ func AlterClientConfig(key string, value string) (err error) {
 		return
 	}
 
-	configPath, _ := getClientConfigPath()
+	configPath, _ := GetClientConfigPath()
 	err = writeClientConfig(configPath)
 	if err != nil {
 		return
@@ -129,7 +129,7 @@ func AlterClientConfig(key string, value string) (err error) {
 
 func ClientConfigShow() {
 	fmt.Println("-------------- client config ------------------")
-	clientCOnfigPath, _ := getClientConfigPath()
+	clientCOnfigPath, _ := GetClientConfigPath()
 	fmt.Println("config file :", clientCOnfigPath)
 	fmt.Println("-------------- config content -----------------")
 	fmt.Println("default server:", GetServerAddr(model.WTClient))

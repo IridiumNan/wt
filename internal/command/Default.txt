@@ -1,0 +1,34 @@
+Water-Repo (wt) - Lightweight Package Repository Manager
+Version: 0.0.1
+
+USAGE:
+  wt <command> [arguments]
+
+COMMANDS:
+  search     Search for packages by name
+  info       Show detailed package information
+  install    Download and install a package
+  upload     Upload or replace a package on the server
+  mv         Rename a package
+  rm         Remove a package from the repository
+  ls         List packages (optionally filtered by tag)
+  sync       Synchronize local metadata with server
+  config     View or modify client configuration
+  help       Show this help message
+
+SERVER MODE:
+  wt server [options]
+
+SERVER OPTIONS:
+  -d, dir <path>       Initialize data directory (Default: current directory)
+  -c, config show      Display server configuration
+  -c, config <key> <value>  Modify server configuration
+
+QUICK START:
+  1. Start server:     wt server
+  2. Upload package:   wt upload ./my-app.tar.gz my-app
+  3. Search package:   wt search my-app
+  4. Install package:  wt install my-app
+
+For detailed usage of a specific command, use: wt help <command>
+Example: wt help upload

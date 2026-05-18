@@ -39,7 +39,7 @@ func handleServerZeroTarget(args []string) (err error) {
 func handleServerOneTarget(cmdFlag string, args []string) (err error) {
 	switch cmdFlag {
 	case "-d", "dir":
-		err = config.InitDataDir(args[FirstTarget])
+		err = store.InitData(args[FirstTarget])
 		Done = false
 	case "-c", "config":
 		if args[FirstTarget] == "show" {

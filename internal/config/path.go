@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -71,10 +72,11 @@ func InitDataDir(manualPath string) (err error) {
 	err = os.MkdirAll(metaDataDir, 0o755)
 
 	MetaDataPath = filepath.Join(metaDataDir, metaDataFileName)
+	slog.Debug("manual config the data dir", "manual path", manualPath, "metadataPath", MetaDataPath)
 	return
 }
 
-func getServerConfigPath() (serverConfigPath string, err error) {
+func GetServerConfigPath() (serverConfigPath string, err error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
@@ -84,7 +86,7 @@ func getServerConfigPath() (serverConfigPath string, err error) {
 	return
 }
 
-func getClientConfigPath() (clientConfigPath string, err error) {
+func GetClientConfigPath() (clientConfigPath string, err error) {
 	home, err := os.UserHomeDir()
 
 	clientConfigPath = filepath.Join(home, ClientConfigPath)

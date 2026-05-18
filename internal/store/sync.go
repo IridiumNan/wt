@@ -50,8 +50,9 @@ func syncMetaDataToFile(metaData *model.MetaData) (err error) {
 	return
 }
 
-// sync new package from disk
+// SyncMetaDataFromDisk : sync new package from disk
 func SyncMetaDataFromDisk() {
+	slog.Debug("sync meta data from disk")
 	dir, err := os.ReadDir(config.DataDir)
 	if err != nil {
 		slog.Error(
@@ -61,8 +62,9 @@ func SyncMetaDataFromDisk() {
 		)
 		return
 	}
-
+	var isExist bool
 	for _, entry := range dir {
+		isExist = false
 		info, _ := entry.Info()
 		// skip dir
 		if info.IsDir() {
@@ -71,9 +73,13 @@ func SyncMetaDataFromDisk() {
 		// skip exsit pkg
 		for pkgName := range metaData.DataMap {
 			if info.Name() == pkgName {
-				continue
+				isExist = true
 			}
 		}
-		AddPackage(info)
+		if !isExist {
+			AddPackage(info)
+			slog.Info("add a package from the disk", "pkgName", info.Name(), "ModeTime", info.ModTime(), "size", info.Size())
+		}
+
 	}
 }

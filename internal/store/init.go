@@ -58,6 +58,7 @@ func buildMetaDataFromDisk() {
 }
 
 func InitData(manualPath string) (err error) {
+	slog.Info("init data with manaully config the data path", "dataPath", manualPath)
 	err = config.InitDataDir(manualPath)
 	if err != nil {
 		return fmt.Errorf("initData fail : %w", err)
@@ -73,6 +74,7 @@ func InitData(manualPath string) (err error) {
 	// }
 
 	byteData, err := os.ReadFile(config.MetaDataPath)
+	slog.Debug("check from MetaDataPath byte data and err", "path", config.MetaDataPath, "byteData", string(byteData), "err", err)
 
 	// if the metadata.json is not exsit which mean this dir is not used before
 	// than init the metadata.json by tag all packages with temp

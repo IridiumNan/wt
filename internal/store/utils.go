@@ -6,7 +6,6 @@ import (
 	"io/fs"
 	"log/slog"
 	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 
@@ -56,34 +55,33 @@ func approve(query string) bool {
 }
 
 func Uninstall() (err error) {
+	// Can't get current serve dir so metaData remove is imposible
+	// Maybe can record all metadata dir when build metaData evevy single time
 	// metaData file
-	metaDataDir := filepath.Base(config.MetaDataPath)
+	// metaDataDir := filepath.Base(config.MetaDataPath)
+	// if approve("remove the meta data (for tag info store) ? [y/N] ->") {
+	// 	err = os.RemoveAll(metaDataDir)
+	// 	slog.Info("remove the metaDataDir", "dir", metaDataDir)
+	// } else {
+	// 	fmt.Println("you can check and reuse or remove it manually -> ", config.MetaDataPath)
+	// }
+	clientConfigPath, _ := config.GetClientConfigPath()
+	serverConfigPath, _ := config.GetServerConfigPath()
 
-	if approve("remove the meta data (for tag info store) ? [y/N] ->") {
-		err = os.RemoveAll(metaDataDir)
-		slog.Info("remove the metaDataDir", "dir", metaDataDir)
-	} else {
-		fmt.Println("you can check and reuse or remove it manually -> ", config.MetaDataPath)
-	}
-
-	if approve("remove the client_config? [y/N] ->") {
-		err = os.Remove(config.ClientConfigPath)
-		slog.Info("remove the client config file", "filePath", config.ClientConfigPath)
-
+	if approve("remove the client_config? -> " + clientConfigPath + "[y/N] ->") {
+		err = os.Remove(clientConfigPath)
 	} else {
 		fmt.Println("you can check and reuse or remove it manually -> ", config.ClientConfigPath)
 	}
 
-	if approve("remove the server_config.json? [y/N] ->") {
-		err = os.Remove(config.ServerConfigPath)
-		slog.Info("remove the server config file", "filePath", config.ServerConfigPath)
+	if approve("remove the server_config.json? -> " + serverConfigPath + " [y/N] ->") {
+		err = os.Remove(serverConfigPath)
 	} else {
 		fmt.Println("you can check and reuse or remove it manually -> ", config.ServerConfigPath)
 	}
 
-	if approve("remove the log ? [y/N] ->") {
+	if approve("remove the log ? -> " + config.GetLogDir() + " [y/N] ->") {
 		err = os.RemoveAll(config.GetLogDir())
-		slog.Info("remove the log dir", "filePath", config.GetLogDir())
 	} else {
 		fmt.Println("you can check and reuse or remove it manually ->", config.GetLogDir())
 	}

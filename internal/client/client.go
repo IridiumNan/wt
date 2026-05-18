@@ -276,21 +276,6 @@ func MvRequest(oldName string, newName string) (err error) {
 	return
 }
 
-func ReplaceRequest(pkgName string, filePath string) (err error) {
-	tempName := filepath.Base(filePath) + ".temp"
-	err = UploadRequest(filePath, tempName)
-	if err != nil {
-		return
-	}
-
-	err = MvRequest(tempName, pkgName)
-	if err != nil {
-		_ = RmRequest(tempName)
-		return
-	}
-	return
-}
-
 func SyncRequest() (err error) {
 	val := url.Values{}
 	apiRsp, err := doRequest(http.MethodPut, "/sync", val, model.WTWrite, nil)

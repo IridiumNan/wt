@@ -1,0 +1,89 @@
+WATER-REPO ADVANCED GUIDE
+=========================
+
+COMMAND DETAILS:
+
+1. SEARCH
+   Usage: wt search <pattern>
+   Description: Search packages by name pattern (fuzzy match)
+   Example: wt search app
+   
+2. INFO
+   Usage: wt info <package-name>
+   Description: Display detailed metadata including size, tag, and modification time
+   Example: wt info my-app-v1
+   
+3. INSTALL
+   Usage: wt install <package-name>
+   Description: Download package to current working directory
+   Note: Requires install token authentication
+   Example: wt install my-app-v1
+   
+4. UPLOAD (Supports Overwrite)
+   Usage: wt upload <file-path> [package-name]
+   Description: Upload file to repository. If package-name exists, it will be automatically replaced.
+   Options:
+     - If package-name omitted, uses filename
+     - Supports files up to configured max size (default: 10GB)
+   Examples:
+     wt upload ./build/app.tar.gz
+     wt upload ./build/app.tar.gz my-app
+     
+5. MV (Rename)
+   Usage: wt mv <old-name> <new-name>
+   Description: Rename package and update all metadata references atomically
+   Note: Updates both DataMap and TagMap
+   Example: wt mv old-name new-name
+   
+6. RM (Remove)
+   Usage: wt rm <package-name>
+   Description: Delete package from repository and remove metadata
+   Warning: This operation is irreversible
+   Example: wt rm obsolete-package
+   
+7. LIST
+   Usage: wt list [tag]
+   Description: List packages, optionally filtered by tag
+   Examples:
+     wt list              # List all packages with default tag
+     wt list stable       # List packages tagged as "stable"
+     
+8. SYNC
+   Usage: wt sync
+   Description: Force synchronization of local metadata with server state
+   Use case: After manual file operations or recovery scenarios
+   
+9. CONFIG
+    Client Config:
+      wt config show                      # Display current settings
+      wt config read_token <token>        # Set read access token
+      wt config write_token <token>       # Set write access token
+      
+    Server Config:
+      wt server config show            # Show server configuration
+      wt server config <key> <value>   # Add or modify a setting
+
+SERVER CONFIGURATION KEYS:
+  The following keys correspond directly to fields in server_config.json:
+  
+  - server: Listen address (e.g., "0.0.0.0:12212")
+  - read_timeout: Timeout for read operations (in nanoseconds)
+  - write_timeout: Timeout for write/install operations (in nanoseconds)
+  - read_token: Array of tokens for read access (e.g., ["token1", "token2"])
+  - write_token: Array of tokens for write/upload access
+  - install_token: Array of tokens for download/install access
+
+AUTHENTICATION:
+  - Tokens are managed via the config commands above.
+  - Client automatically uses appropriate token based on operation type.
+  - Headers: X-Read-Token, X-Write-Token, X-Install-Token
+
+FILE LOCATIONS:
+  - Data:     ./ (Current directory, or specified by -d)
+  - Logs:     ~/.local/state/water-repo/ (System standard path)
+  - Config:   ~/.config/water-repo/ (User configuration)
+
+TROUBLESHOOTING:
+  - Check logs at: ~/.local/state/water-repo/log.txt
+  - Verify connectivity: wt search <known-package>
+  - Reset client config: Delete ~/.config/water-repo/client_config.json

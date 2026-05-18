@@ -1,0 +1,33 @@
+WATER-REPO QUICK REFERENCE
+==========================
+
+SEARCH & DISCOVER:
+  wt search <name>              Search for packages
+  wt info <name>                View package details
+  wt ls                         List all packages (default tag)
+  wt ls <tag>                   List packages by tag
+
+DOWNLOAD & INSTALL:
+  wt install <name>             Download package to current directory
+
+UPLOAD & MANAGE:
+  wt upload <file>              Upload file (auto-name from filename)
+  wt upload <file> <name>       Upload file with custom name (supports overwrite)
+  wt mv <old> <new>             Rename a package
+  wt rm <name>                  Delete a package
+
+CONFIGURATION:
+  wt config show                Display current config
+  wt config <key> <value>       Change configuration (e.g., tokens)
+
+SERVER:
+  wt server                     Start repository server (Data in current dir)
+  wt server -d <path>           Set custom data directory
+  wt server -c config show      Show server config
+  wt server -c config <key> <val>  Add/Modify server settings
+
+EXAMPLES:
+  $ wt upload ./app-v1.tar.gz my-app
+  $ wt search my-app
+  $ wt install my-app
+  $ wt mv my-app my-app-renamed
