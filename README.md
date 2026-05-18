@@ -1,132 +1,454 @@
+
 # water-repo
 
-超轻量级个人/小团队仓库管理工具，基于 Go 开发，纯 CLI 交互（无图形化界面），天生适配服务器环境；CS 架构设计，单二进制文件开箱即用，零依赖零配置，没有任何多余功能。
+A super lightweight personal/small-team repository management tool, built with Go. Pure CLI interaction (no GUI), perfectly suited for server environments. CS architecture design, single binary file ready to use, zero dependencies and zero configuration, with no unnecessary features.
+
+## 🚀 Features
+
+- **Lightweight**: Single binary file, zero dependencies
+- **Simple**: Easy-to-use CLI commands
+- **Secure**: Token-based permission system
+- **Flexible**: Tag-based package organization
+- **Cross-platform**: Works on Linux, macOS, and Windows
 
 ---
 
-## 核心用法
+## 📦 Installation
 
-### 基础操作
+### Download Binary
 
-| 操作场景    | 命令示例                               | 说明                      |
-| ------- | ---------------------------------- | ----------------------- |
-| 搜索仓库中的包 | `wt search <package name>`         | 根据包名模糊检索所有资源            |
-| 查看包详情   | `wt info <package name>`           | 获取包大小、上传时间、标签等信息        |
-| 下载安装包   | `wt install <package name>`        | 从仓库下载指定包到本地             |
-| 上传本地包   | `wt upload <local-package-path> <pkg-name>`   | 将本地文件上传至仓库，默认标签为 `temp` |
-| 替换更新包   | `wt replace <pkg-name> <new-path>` | 覆盖仓库中已有包，用于版本更新         |
-| 重命名包    | `wt mv <old-name> <new-name>`      | 修改仓库内包的名称               |
-| 删除包     | `wt rm <package name>`             | 永久移除仓库中的指定包             |
+#### Linux / macOS
+
+```bash
+wget https://repo.waterman.xin/apps/water-repo/wt
+chmod +x wt
+mv wt ~/.local/bin  # or any directory in your PATH
+```
+
+#### Windows
+
+Download from [wt download](https://repo.waterman.xin/apps/water-repo/wt)
+
+> **Note**: Windows support is not fully tested yet.
+
+### Build from Source
+
+```bash
+git clone <repository-url>
+cd water-repo
+go build -o wt ./cmd/wt
+```
 
 ---
 
-## 权限管理
+## 🛠️ Quick Start
 
-采用极简的 **三级 Token 权限体系**，无需用户注册登录，通过配置文件中的 Token 验证操作权限，未配置对应有效 Token 会直接拒绝操作。
+### Server Setup
 
-| 权限等级    | 可执行操作                              | 适用场景        |
-| ------- | ---------------------------------- | ----------- |
-| Read    | `search`、`list`、`info`             | 仅允许查看仓库内容   |
-| Install | `install`                          | 允许下载使用仓库中的包 |
-| Write   | `upload`、`replace`、`mv`、`rm`、`tag` | 允许管理和修改仓库内容 |
+#### Option 1: Interactive Configuration (Recommended for First Time)
+
+1. **Start the server**:
+
+   ```bash
+   wt server
+   ```
+
+2. **Configure server** (interactive setup):
+
+   ```
+   >>set the host and port in the server<<
+   example: 0.0.0.0:12212
+   default value: 0.0.0.0:12212
+   enter your value[default if blank] ->
+
+   >>set the read timeout for server<<
+   example: 20s
+   default value: 20s
+   enter your value[default if blank] ->
+
+   >>set the install timeout for server<<
+   example: 3h
+   default value: 3h
+   enter your value[default if blank] ->
+
+   >>set the write timeout for server<<
+   example: 3h
+   default value: 3h
+   enter your value[default if blank] ->
+
+   >>set the read tokens for server<<
+   example: xxxxx
+   default value: no token set as default
+   enter the number of tocken you want to add:1
+   setting your value[generated randomly if blank]
+   enter the 1 th token ->[your-token]
+
+   >>set the install tokens for server<<
+   ...
+   
+   >>set the write tokens for server<<
+   ...
+   ```
+
+#### Option 2: Manual Configuration
+
+1. **Start server with custom data directory** (optional):
+
+   ```bash
+   wt server -d /path/to/data/directory
+   ```
+
+2. **Configure server manually using commands**:
+
+   ```bash
+   # Set server address and timeouts (replace existing value)
+   wt server config server 0.0.0.0:12212
+   wt server config read_timeout 20s
+   wt server config write_timeout 30s
+   wt server config install_timeout 3h
+   
+   # Add tokens (can add multiple tokens)
+   wt server config read_token add your-read-token
+   wt server config install_token add your-install-token
+   wt server config write_token add your-write-token
+   
+   # View current configuration
+   wt server config show
+   ```
+
+3. **Restart the server** to apply configuration changes:
+
+   ```bash
+   # Stop the server (Ctrl+C) and restart
+   wt server
+   ```
+
+### Client Setup
+
+#### Option 1: Interactive Configuration (Recommended for First Time)
+
+1. **Initialize client**:
+
+   ```bash
+   wt ls
+   ```
+
+2. **Configure client** (interactive setup):
+
+   ```
+   expected config file:  /home/user/.config/water-repo/client_config.json
+   client config file not exist, begin to init...
+
+   >>set the server -> host:port<<
+   example: http://192.168.1.2:12212
+   default value: http://192.168.1.2:12212
+   enter your value[default if blank] ->
+
+   >>set the read time out for client<<
+   example: 20s
+   default value: 20s
+   enter your value[default if blank] ->
+
+   >>set the install timeout for client<<
+   example: 3h
+   default value: 3h
+   enter your value[default if blank] ->
+
+   >>set the write timeout for client<<
+   example: 3h
+   default value: 3h
+   enter your value[default if blank] ->
+
+   >>set the read token for client<<
+   example: xxxxxxx
+   default value: generated by random
+   enter your token [press Enter to generate randomly] -> 
+   generated random token: [token]
+
+   >>set the install token for client<<
+   ...
+   
+   >>set the write token for client<<
+   ...
+   ```
+
+#### Option 2: Manual Configuration
+
+1. **Configure client manually using commands**:
+
+   ```bash
+   # Set server address and timeouts
+   wt config server http://192.168.1.2:12212
+   wt config read_timeout 20s
+   wt config install_timeout 3h
+   wt config write_timeout 30s
+   
+   # Set tokens (replace existing token)
+   wt config read_token your-read-token
+   wt config install_token your-install-token
+   wt config write_token your-write-token
+   
+   # View current configuration
+   wt config show
+   ```
+
+> **Important**: Make sure the client tokens match at least one of the corresponding server tokens for each permission level.
 
 ---
 
-## 配置文件
+## 📋 Basic Commands
 
-### 客户端配置
+| Operation | Command Example | Description |
+|-----------|----------------|-------------|
+| Search packages | `wt search <package-name>` | Fuzzy search for packages by name |
+| View package info | `wt info <package-name>` | Get package details (size, upload time, tags, etc.) |
+| Download package | `wt install <package-name>` | Download specified package to local directory |
+| Upload package | `wt upload <file-path> [package-name]` | Upload local file to repository (auto-generates name if not provided) |
+| Rename package | `wt mv <old-name> <new-name>` | Rename a package in the repository |
+| Delete package | `wt rm <package-name>` | Permanently remove a package from the repository |
+| List packages | `wt list [tag]` or `wt ls [tag]` | List all packages or filter by tag |
+| Sync metadata | `wt sync` | Synchronize local metadata with server |
+| Show help | `wt help` | Display help information |
 
-路径：`~/.config/water-repo/client_config.json`
+---
+
+## 🔐 Permission System
+
+Uses a simple **three-level Token permission system**. No user registration/login required. Operations are validated through tokens in the configuration file. Operations without valid tokens will be rejected.
+
+| Permission Level | Allowed Operations | Use Case |
+|------------------|-------------------|----------|
+| Read | `search`, `list`, `info` | View repository content only |
+| Install | `install` | Download packages from repository |
+| Write | `upload`, `mv`, `rm` | Manage and modify repository content |
+
+---
+
+## 🏷️ Tag Management
+
+Organize packages logically using **Tags** instead of complex directory structures. Each package must belong to exactly one tag.
+
+System has two built-in, non-deletable tags:
+
+- `temp`: Default tag for all uploaded packages
+- `static`: For long-term static resources
+
+### Tag Commands
+
+| Operation | Command Example | Description |
+|-----------|----------------|-------------|
+| List packages by tag | `wt list <tag-name>` | Show all packages under a specific tag |
+| Change package tag | `wt tag <package-name> <target-tag>` | Move package to a different tag |
+| Add custom tag | `wt tag add <tag-name>` | Create a new custom tag |
+| Remove custom tag | `wt tag rm <tag-name>` | Delete a tag; packages revert to `temp` tag |
+| Clear all packages in tag | `wt clear <tag-name>` | **Dangerous!** Permanently delete all packages under this tag |
+
+---
+
+## ⚙️ Configuration Files
+
+### Client Configuration
+
+Path: `~/.config/water-repo/client_config.json`
 
 ```json
 {
-    "server": "服务器IP:端口",
+    "server": "http://server-ip:port",
     "read_timeout": "10s",
     "install_timeout": "30m",
     "write_timeout": "30s",
-    "read_token": "你的阅读权限Token",
-    "install_token": "你的下载权限Token",
-    "write_token": "你的写入权限Token"
+    "read_token": "your-read-token",
+    "install_token": "your-install-token",
+    "write_token": "your-write-token"
 }
 ```
 
-### 服务端配置
+### Server Configuration
 
-路径：`~/.config/water-repo/server_config.json`
+Path: `~/.config/water-repo/server_config.json`
 
 ```json
 {
-    "server": ":8080",
+    "server": "127.0.0.1:8080",
     "read_timeout": "15s",
     "write_timeout": "30s",
     "install_timeout": "1h",
     "read_token": [
-        "全局阅读Token1",
-        "全局阅读Token2"
+        "global-read-token1",
+        "global-read-token2"
     ],
     "install_token": [
-        "全局下载Token1"
+        "global-install-token1"
     ],
     "write_token": [
-        "管理员写入Token1"
+        "admin-write-token1"
     ]
 }
 ```
 
 ---
 
-## 进阶用法：标签管理
+## 📁 File Locations
 
-通过 **标签（Tag）** 对仓库内的包进行逻辑分类，替代复杂的目录结构和命名空间，所有包必须归属且仅归属一个标签。
-
-系统默认内置两个不可删除的系统标签：
-
-- `temp`：临时文件标签，所有上传的包默认归属此标签
-- `static`：持久文件标签，用于存放长期使用的静态资源
-
-### 标签操作命令
-
-| 操作场景        | 命令示例                                 | 说明                                |
-| ----------- | ------------------------------------ | --------------------------------- |
-| 列出指定标签的所有包  | `wt list <target-tag>`               | 展示归属该标签的全部包                       |
-| 修改包的标签      | `wt tag <package name> <target-tag>` | 将指定包移动到目标标签下                      |
-| 新增自定义标签     | `wt tag add <tag-name>`              | 创建新的分类标签                          |
-| 删除自定义标签     | `wt tag rm <tag-name>`               | 删除指定标签；原归属该标签的所有包会自动回退到 `temp` 标签 |
-| 批量清理标签下的所有包 | `wt clear <target-tag>`              | **高危操作！** 永久删除该标签下的所有包，不可恢复       |
+- **Data Storage**: Current directory (or specified by `-d` flag)
+- **Logs**: `~/.local/state/water-repo/log.txt`
+- **Client Config**: `~/.config/water-repo/client_config.json`
+- **Server Config**: `~/.config/water-repo/server_config.json`
 
 ---
 
-## 🚧 开发中功能
+## 🧪 Examples
 
-以下功能正在开发中，将在后续版本中陆续上线，现有配置文件和核心命令保持完全向后兼容。
+### Upload a Package
 
-### 核心待实现（下一版本）
+```bash
+wt upload ./build/my-app.tar.gz my-app-v1
+```
 
-1. **按标签的细粒度权限控制**
+### Search for Packages
 
-   - 基于现有标签系统扩展，无需引入复杂的角色和用户体系
-   - 支持为每个标签单独配置 Read/Install/Write 权限 Token
-   - 标签权限优先级高于全局权限，实现"不同人管理不同分类的包"
-   - 示例：前端组仅拥有 `frontend` 标签的写入权限，后端组仅拥有 `backend` 标签的写入权限
+```bash
+wt search my-app
+```
 
-2. **动态镜像源管理**
+### View Package Information
 
-   - 支持添加多个远程 wt 服务端作为镜像源
-   - 搜索时自动并行查询所有镜像源，合并返回结果
-   - 下载时自动选择最快的可用源，失败自动切换到其他源
-   - 提供 `wt mirror add/remove/list` 命令管理镜像源
+```bash
+wt info my-app-v1
+```
 
-3. **局域网自动发现**
+### Download a Package
 
-   - 服务端启动后自动广播自身存在
-   - 客户端自动发现同一局域网内所有运行中的 wt 服务端
-   - 发现的节点自动加入镜像源列表，无需手动配置
-   - 支持一键关闭自动发现功能
+```bash
+wt install my-app-v1
+```
 
-### 规划中功能
+### Rename a Package
 
-1. **`wt install-tag` 批量下载**：一条命令下载指定标签下的所有包
-2. **`wt public` 一键公开分享**：将指定包公开给整个局域网，任何人无需配置 Token 即可下载
-3. **下载进度显示**：命令行实时显示下载速度和进度条
-4. **断点续传**：支持大文件断点续传，中断后无需重新下载
-5. **`wt config` 配置管理命令**：无需手动编辑 JSON 文件，通过命令行修改配置
+```bash
+wt mv my-app-v1 my-app-v2
+```
+
+### List All Packages
+
+```bash
+wt ls
+```
+
+### List Packages by Tag
+
+```bash
+wt list temp
+```
+
+### Sync Metadata
+
+```bash
+wt sync
+```
+
+---
+
+## 🛠️ Advanced Usage
+
+### Configuration Management
+
+#### Client Configuration
+
+```bash
+# Show current configuration
+wt config show
+
+# Modify configuration (replaces existing value)
+wt config server http://192.168.1.2:12212
+wt config read_timeout 20s
+wt config install_timeout 3h
+wt config write_timeout 30s
+wt config read_token <new-token>
+wt config install_token <new-token>
+wt config write_token <new-token>
+```
+
+#### Server Configuration
+
+```bash
+# Show server configuration
+wt server config show
+
+# Modify server address and timeouts (replaces existing value)
+wt server config server 0.0.0.0:8080
+wt server config read_timeout 30s
+wt server config write_timeout 30s
+wt server config install_timeout 3h
+
+# Add tokens (appends to token list)
+wt server config read_token add <new-token>
+wt server config install_token add <new-token>
+wt server config write_token add <new-token>
+```
+
+> **Note**:
+>
+> - Client config commands replace the existing value
+> - Server token commands use `add` to append to the token list (supports multiple tokens)
+> - Server configuration changes require a server restart to take effect
+
+### Server Logs
+
+```bash
+# View server logs
+wt server log
+```
+
+---
+
+## 🚧 Planned Features (v0.0.2)
+
+The following features are under development and will be released in future versions. Existing configuration files and core commands will remain fully backward compatible.
+
+### Core Features (Next Version)
+
+1. **Fine-grained Permission Control by Tags**
+   - Extend existing tag system without introducing complex role/user systems
+   - Support configuring Read/Install/Write permissions for each tag separately
+   - Tag permissions take priority over global permissions
+   - Example: Frontend team only has write access to `frontend` tag, backend team only has write access to `backend` tag
+
+2. **Dynamic Mirror Source Management**
+   - Support adding multiple remote wt servers as mirror sources
+   - Automatically query all mirrors in parallel during search, merge results
+   - Automatically select fastest available source for downloads, failover to other sources
+   - Provide `wt mirror add/remove/list` commands to manage mirrors
+
+3. **LAN Auto-discovery**
+   - Server automatically broadcasts its presence after startup
+   - Client automatically discovers all running wt servers in the same LAN
+   - Discovered nodes automatically added to mirror source list, no manual configuration needed
+   - Support one-click disable of auto-discovery feature
+
+### Planned Features
+
+1. **`wt install-tag` Batch Download**: Download all packages under a specified tag with one command
+2. **`wt public` One-click Public Sharing**: Make specified package publicly available to entire LAN, anyone can download without Token configuration
+3. **Download Progress Display**: Real-time download speed and progress bar in command line
+4. **Resume Broken Downloads**: Support resuming large file downloads, no need to restart after interruption
+5. **`wt config` Configuration Management Command**: Modify configuration via command line without manually editing JSON files
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- Built with [Go](https://golang.org/)
+- Inspired by the need for simple, lightweight package management solutions
