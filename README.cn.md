@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/badge/go-1.25.9+-blue.svg)](https://golang.org/)
-[![Version](https://img.shields.io/badge/version-v0.0.1-orange.svg)]()
+[![Version](https://img.shields.io/badge/version-v0.0.2-orange.svg)]()
 
 超轻量级个人/小团队仓库管理工具,基于 Go 开发,纯 CLI 交互(无图形化界面),天生适配服务器环境;CS 架构设计,单二进制文件开箱即用,零依赖零配置,没有任何多余功能。
 
@@ -25,22 +25,22 @@
 #### Linux
 
 ```bash
-wget https://repo.waterman.xin/apps/water-repo/wt-v0.0.1-linux-amd64
-chmod +x wt-v0.0.1-linux-amd64
-mv wt-v0.0.1-linux-amd64 ~/.local/bin/wt  # 或任何在 PATH 中的目录
+wget https://repo.waterman.xin/apps/water-repo/wt-v0.0.2-linux-amd64
+chmod +x wt-v0.0.2-linux-amd64
+mv wt-v0.0.2-linux-amd64 ~/.local/bin/wt  # 或任何在 PATH 中的目录
 ```
 
 #### macOS (Apple Silicon)
 
 ```bash
-curl -LO https://repo.waterman.xin/apps/water-repo/wt-v0.0.1-darwin-arm64
-chmod +x wt-v0.0.1-darwin-arm64
-mv wt-v0.0.1-darwin-arm64 ~/.local/bin/wt  # 或任何在 PATH 中的目录
+curl -LO https://repo.waterman.xin/apps/water-repo/wt-v0.0.2-darwin-arm64
+chmod +x wt-v0.0.2-darwin-arm64
+mv wt-v0.0.2-darwin-arm64 ~/.local/bin/wt  # 或任何在 PATH 中的目录
 ```
 
 #### Windows
 
-从 [wt-v0.0.1-windows-amd64.exe](https://repo.waterman.xin/apps/water-repo/wt-v0.0.1-windows-amd64.exe) 下载
+从 [wt-v0.0.2-windows-amd64.exe](https://repo.waterman.xin/apps/water-repo/wt-v0.0.2-windows-amd64.exe) 下载
 
 > **注意**：将下载的文件重命名为 `wt.exe` 并添加到 PATH 环境变量中。
 
@@ -205,7 +205,7 @@ go build -o wt ./cmd/wt
    wt config show
    ```
 
-> **重要提示**：确保客户端令牌与服务器相应权限级别的至少一个令牌匹配。
+> **重要提示**：确保客户端令牌与服务器相应权限级别的令牌匹配。
 
 ---
 

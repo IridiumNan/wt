@@ -599,4 +599,4 @@ Design note: this doesn't contradict the Token system — Token means "authentic
 
 | 版本 / Version | 日期 / Date | 变更 / Changes |
 |---------------|-------------|----------------|
-| v0.1 | 2025-07 | 初始版本，记录 v0.0.1 的设计决策 / Initial version, documents v0.0.1 design decisions |
+| v0.1 | 2026-05 | 初始版本，记录 v0.0.1 的设计决策 / Initial version, documents v0.0.1 design decisions |
