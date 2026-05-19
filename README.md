@@ -409,7 +409,7 @@ wt server log
 
 ---
 
-## 🚧 Planned Features (v0.0.2)
+## 🚧 Planned Features (v0.1.1+)
 
 The following features are under development and will be released in future versions. Existing configuration files and core commands will remain fully backward compatible.
 
