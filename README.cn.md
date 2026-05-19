@@ -1,6 +1,6 @@
 # water-repo
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/badge/go-1.25.9+-blue.svg)](https://golang.org/)
 [![Version](https://img.shields.io/badge/version-v0.0.1-orange.svg)]()
 
@@ -22,19 +22,27 @@
 
 ### 下载二进制文件
 
-#### Linux / macOS
+#### Linux
 
 ```bash
-wget https://repo.waterman.xin/apps/water-repo/wt
-chmod +x wt
-mv wt ~/.local/bin  # 或任何在 PATH 中的目录
+wget https://repo.waterman.xin/apps/water-repo/wt-v0.0.1-linux-amd64
+chmod +x wt-v0.0.1-linux-amd64
+mv wt-v0.0.1-linux-amd64 ~/.local/bin/wt  # 或任何在 PATH 中的目录
+```
+
+#### macOS (Apple Silicon)
+
+```bash
+curl -LO https://repo.waterman.xin/apps/water-repo/wt-v0.0.1-darwin-arm64
+chmod +x wt-v0.0.1-darwin-arm64
+mv wt-v0.0.1-darwin-arm64 ~/.local/bin/wt  # 或任何在 PATH 中的目录
 ```
 
 #### Windows
 
-从 [wt 下载页面](https://repo.waterman.xin/apps/water-repo/wt) 下载
+从 [wt-v0.0.1-windows-amd64.exe](https://repo.waterman.xin/apps/water-repo/wt-v0.0.1-windows-amd64.exe) 下载
 
-> **注意**：Windows 版本尚未经过完整测试。
+> **注意**：将下载的文件重命名为 `wt.exe` 并添加到 PATH 环境变量中。
 
 ### 从源码构建
 
@@ -449,7 +457,7 @@ wt server log
 
 ## 📄 许可证
 
-本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件。
+本项目采用 GNU General Public License v3.0 许可证 - 详见 [LICENSE](LICENSE) 文件。
 
 ---
 
@@ -457,4 +465,3 @@ wt server log
 
 - 使用 [Go](https://golang.org/) 构建
 - 受简单轻量级包管理解决方案需求的启发
- 受简单轻量级包管理解决方案需求的启发

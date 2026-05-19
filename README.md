@@ -1,4 +1,3 @@
-
 # water-repo
 
 A super lightweight personal/small-team repository management tool, built with Go. Pure CLI interaction (no GUI), perfectly suited for server environments. CS architecture design, single binary file ready to use, zero dependencies and zero configuration, with no unnecessary features.
@@ -17,19 +16,27 @@ A super lightweight personal/small-team repository management tool, built with G
 
 ### Download Binary
 
-#### Linux / macOS
+#### Linux
 
 ```bash
-wget https://repo.waterman.xin/apps/water-repo/wt
-chmod +x wt
-mv wt ~/.local/bin  # or any directory in your PATH
+wget https://repo.waterman.xin/apps/water-repo/wt-v0.0.1-linux-amd64
+chmod +x wt-v0.0.1-linux-amd64
+mv wt-v0.0.1-linux-amd64 ~/.local/bin/wt  # or any directory in your PATH
+```
+
+#### macOS (Apple Silicon)
+
+```bash
+curl -LO https://repo.waterman.xin/apps/water-repo/wt-v0.0.1-darwin-arm64
+chmod +x wt-v0.0.1-darwin-arm64
+mv wt-v0.0.1-darwin-arm64 ~/.local/bin/wt  # or any directory in your PATH
 ```
 
 #### Windows
 
-Download from [wt download](https://repo.waterman.xin/apps/water-repo/wt)
+Download from [wt-v0.0.1-windows-amd64.exe](https://repo.waterman.xin/apps/water-repo/wt-v0.0.1-windows-amd64.exe)
 
-> **Note**: Windows support is not fully tested yet.
+> **Note**: Rename the downloaded file to `wt.exe` and add it to your PATH.
 
 ### Build from Source
 
@@ -444,7 +451,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
 
 ---
 
