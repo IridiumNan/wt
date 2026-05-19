@@ -197,7 +197,7 @@ func UploadRequest(filePath string, pkgName string) (err error) {
 
 	file, err := os.Open(filePath)
 	if err != nil {
-		return fmt.Errorf("fail to open local file : %s\nerr : %w", err)
+		return fmt.Errorf("fail to open local file : %s\nerr : %w", filePath, err)
 	}
 	defer file.Close()
 
@@ -239,7 +239,7 @@ func UploadRequest(filePath string, pkgName string) (err error) {
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("request fail :", err)
+		return fmt.Errorf("request fail : %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -248,7 +248,7 @@ func UploadRequest(filePath string, pkgName string) (err error) {
 		return fmt.Errorf("upload failed (status %d): %s", resp.StatusCode, string(respBody))
 	}
 
-	slog.Info("upload file success", "localFile", filePath, "pkgName", pkgName)
+	fmt.Printf("upload file success, localFile -> %s, pkgName -> %s", filePath, pkgName)
 	return nil
 }
 
@@ -271,6 +271,7 @@ func MvRequest(oldName string, newName string) (err error) {
 
 	slog.Debug("client jsonData", "data", string(jsonData))
 
+	fmt.Println("Status Code ", apiRsp.Code)
 	fmt.Println(string(jsonData))
 
 	return
@@ -307,6 +308,7 @@ func RmRequest(pkgName string) (err error) {
 
 	jsonData, _ := json.Marshal(apiRsp.Data)
 
+	fmt.Println("Status Code ", apiRsp.Code)
 	fmt.Println(string(jsonData))
 
 	return
