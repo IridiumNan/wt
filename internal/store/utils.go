@@ -37,7 +37,7 @@ func removePkgInNameList(oldNameList []string, pkgName string) (newNameList []st
 	return
 }
 
-func isPackageExist(fileName string, nameList []string) bool {
+func IsPackageExist(fileName string, nameList []string) bool {
 	return slices.Contains(nameList, fileName)
 }
 

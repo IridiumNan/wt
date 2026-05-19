@@ -116,7 +116,9 @@ func RenamePackage(oldName string, newName string) (err error) {
 	for i := range oldNameList {
 		if oldNameList[i] == oldName {
 			newNameList := append(oldNameList[:i], oldNameList[i+1:]...)
-			newNameList = append(newNameList, newName)
+			if !IsPackageExist(newName, newNameList) {
+				newNameList = append(newNameList, newName)
+			}
 			metaData.TagMap[pkg.Tag] = newNameList
 			break
 		}
