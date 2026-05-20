@@ -109,6 +109,26 @@ func GetTagTokenList(tag string, wtMethod model.WTMethod) (tokenList []string, e
 	return
 }
 
+func AddTagTokenList(tag string) {
+	if _, exist := serverConfig.TagTokenMap[tag]; exist {
+		return
+	}
+
+	serverConfig.TagTokenMap[tag] = model.TagAuthTokens{
+		ReadTokens:    []string{},
+		Installtokens: []string{},
+		WriteTokens:   []string{},
+	}
+}
+
+func DeleteTagTokenList(tag string) {
+	if _, exist := serverConfig.TagTokenMap[tag]; !exist {
+		return
+	}
+
+	delete(serverConfig.TagTokenMap, tag)
+}
+
 func GetAllTags() (tagList []string) {
 	for tag := range serverConfig.TagTokenMap {
 		if tag == DefaultTagStatic || tag == DefaultTagTemp {

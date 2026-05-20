@@ -63,16 +63,6 @@ func InitData(manualPath string) (err error) {
 	if err != nil {
 		return fmt.Errorf("initData fail : %w", err)
 	}
-
-	// there is no need to check the dir which has done by InitDataDir
-	// metaDataPath := config.MetaDataPath
-	// metaDataDir := filepath.Dir(metaDataPath)
-	//
-	// err = os.MkdirAll(metaDataDir, 0o755)
-	// if err != nil {
-	// 	return err
-	// }
-
 	byteData, err := os.ReadFile(config.MetaDataPath)
 	slog.Debug("check from MetaDataPath byte data and err", "path", config.MetaDataPath, "byteData", string(byteData), "err", err)
 
