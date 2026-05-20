@@ -2,6 +2,7 @@ package store
 
 import (
 	"encoding/json"
+	"io/fs"
 	"log/slog"
 	"os"
 
@@ -62,24 +63,45 @@ func SyncMetaDataFromDisk() {
 		)
 		return
 	}
-	var isExist bool
+
+	diskPackages := make(map[string]fs.FileInfo)
 	for _, entry := range dir {
-		isExist = false
-		info, _ := entry.Info()
-		// skip dir
+		info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+
 		if info.IsDir() {
 			continue
 		}
-		// skip exsit pkg
-		for pkgName := range metaData.DataMap {
-			if info.Name() == pkgName {
-				isExist = true
+
+		diskPackages[info.Name()] = info
+	}
+	for pkgName := range metaData.DataMap {
+		// remove package from memory which don't exsit in the disk
+		_, inDisk := diskPackages[pkgName]
+		if !inDisk {
+			pkg := metaData.DataMap[pkgName]
+			delete(metaData.DataMap, pkgName)
+
+			if _, exist := metaData.TagMap[pkg.Tag]; exist {
+				newNameList := removePkgInNameList(metaData.TagMap[pkg.Tag], pkgName)
+				metaData.TagMap[pkg.Tag] = newNameList
 			}
+
+			slog.Info("remove a package from memory when sync data from disk", "pkgName", pkgName)
 		}
-		if !isExist {
+	}
+
+	for pkgName, info := range diskPackages {
+		if _, exist := metaData.DataMap[pkgName]; !exist {
 			AddPackage(info)
 			slog.Info("add a package from the disk", "pkgName", info.Name(), "ModeTime", info.ModTime(), "size", info.Size())
 		}
+	}
 
+	err = syncMetaDataToFile(metaData)
+	if err != nil {
+		slog.Error("SyncMetaDataFromDisk error when sync to file ", "error", err)
 	}
 }

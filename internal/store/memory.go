@@ -34,18 +34,26 @@ func SearchPackage(pattern string) (results []*model.Package) {
 
 // GetPackageInfo : get byte info of specific pkg
 func GetPackageInfo(pkgName string) (byteData []byte, err error) {
-	MapLock.RLock()
-	pkgInfo, ok := metaData.DataMap[pkgName]
-	MapLock.RUnlock()
-
-	if !ok {
-		err = errors.New("pkg not found")
+	var pkgInfo *model.Package
+	pkgInfo, err = GetPackage(pkgName)
+	if err != nil {
 		return
 	}
 
-	byteData, err = json.Marshal(pkgInfo)
-	if err != nil {
-		panic(err)
+	byteData, _ = json.Marshal(pkgInfo)
+
+	return
+}
+
+func GetPackage(pkgName string) (pkg *model.Package, err error) {
+	MapLock.RLock()
+	var ok bool
+	pkg, ok = metaData.DataMap[pkgName]
+	MapLock.RUnlock()
+
+	if !ok {
+		err = errors.New("package not found")
+		return
 	}
 	return
 }
@@ -189,4 +197,28 @@ func DeletePackageByTag(metaData *model.MetaData, tagName string) {
 	for i := range fileList {
 		DeletePackageByName(fileList[i])
 	}
+}
+
+func GetPackageTag(pkgName string) (tag string, err error) {
+	pkg, ok := metaData.DataMap[pkgName]
+	if !ok {
+		return "", errors.New("package not found")
+	}
+
+	tag = pkg.Tag
+	return
+}
+
+// AddTag : add a single tag without token config
+func AddTag(tagName string) (err error) {
+	if _, ok := metaData.TagMap[tagName]; ok {
+		return errors.New("tag " + tagName + " has been exist")
+	}
+	metaData.TagMap[tagName] = make([]string, 1)
+	return nil
+}
+
+// RemoveTag : if package exist then retag them as temp
+func RemoveTag(tagName string) (err error) {
+	return
 }

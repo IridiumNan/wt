@@ -20,4 +20,5 @@ type Auth struct {
 	WtMethod WTMethod
 	Token    string
 	ErrMsg   string
+	Tag      string
 }

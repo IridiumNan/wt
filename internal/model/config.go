@@ -24,6 +24,12 @@ type ClientConfig struct {
 	WriteToken string `json:"write_token"`
 }
 
+type TagAuthTokens struct {
+	ReadTokens    []string `json:"read_token"`
+	Installtokens []string `json:"install_token"`
+	WriteTokens   []string `json:"write_token"`
+}
+
 // ServerConfig struct: store the config of server which load from the ServerConfigPath
 type ServerConfig struct {
 	// host:port
@@ -42,4 +48,26 @@ type ServerConfig struct {
 	InstallToken []string `json:"install_token"`
 	// auth tokens for write
 	WriteToken []string `json:"write_token"`
+
+	// tokens for tag
+	TagTokenMap map[string]TagAuthTokens `json:"tag_token"`
+}
+
+func addIfNotEmpty(tokenList []string, newToken string) []string {
+	if newToken != "" {
+		tokenList = append(tokenList, newToken)
+	}
+
+	return tokenList
+}
+
+func (sc *ServerConfig) AddTagTokens(tagName string, readToken string, installToken string, writeToken string) {
+	authTokens, ok := sc.TagTokenMap[tagName]
+	if !ok {
+		sc.TagTokenMap[tagName] = TagAuthTokens{}
+	}
+
+	authTokens.ReadTokens = addIfNotEmpty(authTokens.ReadTokens, readToken)
+	authTokens.Installtokens = addIfNotEmpty(authTokens.Installtokens, installToken)
+	authTokens.WriteTokens = addIfNotEmpty(authTokens.WriteTokens, writeToken)
 }

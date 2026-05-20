@@ -1,5 +1,5 @@
 Water-Repo (wt) - Lightweight Package Repository Manager
-Version: 0.0.1
+Version: 0.0.3
 
 USAGE:
   wt <command> [arguments]

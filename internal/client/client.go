@@ -29,6 +29,7 @@ func SearchRequest(pattern string) (err error) {
 
 	val := url.Values{}
 	val.Set("name", pattern)
+	val.Set("tag", "")
 	apiRsp, err := doRequest(http.MethodGet, "/search", val, model.WTRead, nil)
 	if err != nil {
 		return
@@ -148,9 +149,10 @@ func InstallRequest(pkgName string) (err error) {
 		return fmt.Errorf("crash when installing pkg: %s\nsaved size: %d\nerror: %w", localPath, written, err)
 	}
 
-	slog.Info("Package download successfully",
-		"path", localPath,
-		"size", written)
+	// slog.Info("Package download successfully",
+	// 	"path", localPath,
+	// 	"size", written)
+	fmt.Printf("Install the package: %s, size: %d", pkgName, written)
 
 	return nil
 }
@@ -257,6 +259,7 @@ func MvRequest(oldName string, newName string) (err error) {
 		return fmt.Errorf("missing old name or new name")
 	}
 
+	fmt.Printf("send request for mv %s to %s (server : %s)", oldName, newName, config.GetServerAddr(model.WTServer))
 	val := url.Values{}
 	val.Set("old_name", oldName)
 	val.Set("new_name", newName)
@@ -278,6 +281,7 @@ func MvRequest(oldName string, newName string) (err error) {
 }
 
 func SyncRequest() (err error) {
+	fmt.Printf("send request for sync file info from disk (server: %s)", config.GetServerAddr(model.WTServer))
 	val := url.Values{}
 	apiRsp, err := doRequest(http.MethodPut, "/sync", val, model.WTWrite, nil)
 	if err != nil {
@@ -297,6 +301,7 @@ func RmRequest(pkgName string) (err error) {
 		return fmt.Errorf("missing pkg name")
 	}
 
+	fmt.Printf("send request for rm package : %s (server: %s)", pkgName, config.GetServerAddr(model.WTServer))
 	val := url.Values{}
 	val.Set("name", pkgName)
 	apiRsp, err := doRequest(http.MethodDelete, "/rm", val, model.WTWrite, nil)

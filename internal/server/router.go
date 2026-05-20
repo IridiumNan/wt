@@ -11,11 +11,11 @@ func NewRouter() *http.ServeMux {
 	mux.HandleFunc("/info", infoHandler)
 	mux.HandleFunc("/install", installHandler)
 	mux.HandleFunc("/upload", uploadHandler)
-	// mux.HandleFunc("/replace", replaceHandler)
 	mux.HandleFunc("/mv", mvHandler)
 	mux.HandleFunc("/rm", rmHandler)
 	mux.HandleFunc("/list", listHandler)
 	mux.HandleFunc("/sync", syncHandler)
+	mux.HandleFunc("/tag/list", tagListHandler)
 
 	return &mux
 }
