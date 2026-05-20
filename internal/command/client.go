@@ -87,6 +87,9 @@ func handleZeroTarget(command string) (err error) {
 	case "help", "--help", "-h":
 		fmt.Println(DefaultManual)
 		Done = true
+	case "tags":
+		err = client.TagListRequest()
+		Done = true
 	}
 
 	return

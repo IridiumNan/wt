@@ -437,3 +437,8 @@ func tagListHandler(w http.ResponseWriter, r *http.Request) {
 		model.SuccessfulResponse(tags, msg),
 	)
 }
+
+// func addTagHandler(w http.ResponseWriter, r *http.Request) {
+// 	defer r.Body.Close()
+//
+// }

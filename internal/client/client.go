@@ -29,7 +29,6 @@ func SearchRequest(pattern string) (err error) {
 
 	val := url.Values{}
 	val.Set("name", pattern)
-	val.Set("tag", "")
 	apiRsp, err := doRequest(http.MethodGet, "/search", val, model.WTRead, nil)
 	if err != nil {
 		return
@@ -315,6 +314,29 @@ func RmRequest(pkgName string) (err error) {
 
 	fmt.Println("Status Code ", apiRsp.Code)
 	fmt.Println(string(jsonData))
+
+	return
+}
+
+func TagListRequest() (err error) {
+	val := url.Values{}
+	apiRsp, err := doRequest(http.MethodGet, "/tag/list", val, model.WTRead, nil)
+	if err != nil {
+		return
+	}
+
+	jsonData, _ := json.Marshal(apiRsp.Data)
+
+	var tags []string
+	// return data : tags []string
+	err = json.Unmarshal(jsonData, &tags)
+	if err != nil {
+		return
+	}
+
+	for i := range tags {
+		fmt.Println(tags[i])
+	}
 
 	return
 }
