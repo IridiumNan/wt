@@ -1,12 +1,14 @@
 package server
 
 import (
+	"fmt"
 	"io"
 	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"gitee.com/cai-zixiang_hainan/wt/internal/config"
@@ -15,30 +17,19 @@ import (
 	"gitee.com/cai-zixiang_hainan/wt/pkg/httphelper"
 )
 
+// searchHandler : search package in available scope, tag is not required
 func searchHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-
 	data := r.URL.Query()
-	tokenHeadName := config.GetTokenHeadName(model.WTRead)
-
-	errMsg := "has no access to read"
-	auth := model.Auth{
-		WtMethod: model.WTRead,
-		Token:    r.Header.Get(tokenHeadName),
-		ErrMsg:   errMsg,
-	}
-
-	// handle read token without access
-	if !isAccess(auth) {
-		httphelper.SendJSONResponse(
-			w,
-			http.StatusForbidden,
-			model.ForbiddenResponse(errMsg),
-		)
-		return
-	}
 	searchName := data.Get("name")
 
+	// if !TokenOk(w, r, model.WTRead, "") {
+	// 	return
+	// }
+
+	clientToken := r.Header.Get(config.GetTokenHeadName(model.WTRead))
+	// search in the available scope
+	tags := GetAvailableTags(clientToken, model.WTRead)
 	slog.Debug("receive search patten (server)", "pattern", searchName)
 
 	// handle empty search name
@@ -51,8 +42,15 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	results := store.SearchPackage(searchName)
+	allResults := store.SearchPackage(searchName)
+	var results []*model.Package
+	for i := range allResults {
+		if slices.Contains(tags, allResults[i].Tag) {
+			results = append(results, allResults[i])
+		}
+	}
 
+	slog.Debug("check search results", "available tags", tags, "allresults", allResults, "results", results)
 	// handle not found
 	if results == nil {
 		httphelper.SendJSONResponse(
@@ -70,45 +68,54 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+// infoHandler : get information of package, and the package tag will handle by server so tag is no required
 func infoHandler(w http.ResponseWriter, r *http.Request) {
-	searchHandler(w, r)
+	defer r.Body.Close()
+	data := r.URL.Query()
+	pkgName := data.Get("name")
+
+	pkg, err := store.GetPackage(pkgName)
+	if err == nil && !TokenOk(w, r, model.WTRead, pkg.Tag) {
+		return
+	}
+	if err != nil {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusNotFound,
+			model.NotFoundResponse("package "+pkgName+" not found"),
+		)
+	}
+
+	httphelper.SendJSONResponse(
+		w,
+		http.StatusOK,
+		model.SuccessfulResponse([]*model.Package{pkg}, "package found"),
+	)
 }
 
+// installHandler : handle the install reqest and the tag is not required
 func installHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	data := r.URL.Query()
-	tokenHeadName := config.GetTokenHeadName(model.WTInstall)
-	installToken := r.Header.Get(tokenHeadName)
-	errMsg := "has no access to install"
-
-	auth := model.Auth{
-		WtMethod: model.WTInstall,
-		Token:    installToken,
-		ErrMsg:   errMsg,
-	}
-
-	if !isAccess(auth) {
-		httphelper.SendJSONResponse(
-			w,
-			http.StatusForbidden,
-			model.ForbiddenResponse("has no access to install"),
-		)
-		return
-	}
-
 	pkgName := data.Get("name")
-	if filepath.Base(pkgName) != pkgName {
-		httphelper.SendJSONResponse(w, http.StatusBadRequest, model.BadRequestResponse("invalid package name"))
-		return
-	}
-	_, err := store.GetPackageInfo(pkgName)
+
+	pkg, err := store.GetPackage(pkgName)
 	if err != nil {
 		httphelper.SendJSONResponse(
 			w,
 			http.StatusNotFound,
 			model.NotFoundResponse("pkg "+pkgName+" not found"),
 		)
+		return
+	}
+	if filepath.Base(pkgName) != pkgName {
+		httphelper.SendJSONResponse(w, http.StatusBadRequest, model.BadRequestResponse("invalid package name"))
+		return
+	}
+	tag := pkg.Tag
+
+	if !TokenOk(w, r, model.WTInstall, tag) {
 		return
 	}
 
@@ -118,6 +125,9 @@ func installHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func uploadHandler(w http.ResponseWriter, r *http.Request) {
+	if !TokenOk(w, r, model.WTWrite, config.DefaultTagTemp) {
+		return
+	}
 	// Step 1: Get the boundary from Content-Type header
 	contentType := r.Header.Get("Content-Type")
 	if !strings.HasPrefix(contentType, "multipart/") {
@@ -237,33 +247,13 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	httphelper.SendJSONResponse(w, http.StatusOK, model.SuccessfulResponse("package uploaded successfully", ""))
 }
 
-func replaceHandler(w http.ResponseWriter, r *http.Request) {
-}
-
+// mvHandler : rename the package and the tag is not required from header
 func mvHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	data := r.URL.Query()
-	tokenHeadName := config.GetTokenHeadName(model.WTWrite)
-
-	errMsg := "has no access to write"
-	auth := model.Auth{
-		WtMethod: model.WTWrite,
-		Token:    r.Header.Get(tokenHeadName),
-		ErrMsg:   errMsg,
-	}
-
-	if !isAccess(auth) {
-		httphelper.SendJSONResponse(
-			w,
-			http.StatusForbidden,
-			model.ForbiddenResponse(errMsg),
-		)
-		return
-	}
 
 	oldName := data.Get("old_name")
 	newName := data.Get("new_name")
-	slog.Debug("receive old name and new name of package", "old_name", oldName, "new_name", newName)
 
 	if oldName == "" || newName == "" {
 		httphelper.SendJSONResponse(
@@ -274,6 +264,22 @@ func mvHandler(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
+	oldPkg, err := store.GetPackage(oldName)
+	if err != nil {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusNotFound,
+			model.NotFoundResponse("package "+oldName+" not found"),
+		)
+		return
+	}
+
+	if !TokenOk(w, r, model.WTWrite, oldPkg.Tag) {
+		return
+	}
+
+	slog.Debug("receive old name and new name of package", "old_name", oldName, "new_name", newName)
 
 	oldPath := filepath.Join(config.DataDir, oldName)
 	newPath := filepath.Join(config.DataDir, newName)
@@ -303,28 +309,25 @@ func mvHandler(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+// rmHandler : handle the remove request and the tag is not reqired from the header
 func rmHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	data := r.URL.Query()
-	tokenHeadName := config.GetTokenHeadName(model.WTWrite)
+	pkgName := data.Get("name")
 
-	errMsg := "has no access to rm"
-	auth := model.Auth{
-		WtMethod: model.WTWrite,
-		Token:    r.Header.Get(tokenHeadName),
-		ErrMsg:   errMsg,
-	}
-
-	if !isAccess(auth) {
+	pkg, err := store.GetPackage(pkgName)
+	if err != nil {
 		httphelper.SendJSONResponse(
 			w,
-			http.StatusForbidden,
-			model.ForbiddenResponse(errMsg),
+			http.StatusNotFound,
+			model.NotFoundResponse("package "+pkgName+" not found"),
 		)
 		return
 	}
+	if !TokenOk(w, r, model.WTWrite, pkg.Tag) {
+		return
+	}
 
-	pkgName := data.Get("name")
 	slog.Debug("pkgName to rm ", "name", pkgName)
 
 	if pkgName == "" {
@@ -336,7 +339,7 @@ func rmHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := store.DeletePackageByName(pkgName)
+	err = store.DeletePackageByName(pkgName)
 	if err != nil {
 		if os.IsNotExist(err) {
 			httphelper.SendJSONResponse(
@@ -361,32 +364,20 @@ func rmHandler(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+// listHandler : handle the list require and the tag is required
 func listHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 	data := r.URL.Query()
-	tokenHeadName := config.GetTokenHeadName(model.WTRead)
-
-	errMsg := "has no access to read"
-	auth := model.Auth{
-		WtMethod: model.WTRead,
-		Token:    r.Header.Get(tokenHeadName),
-		ErrMsg:   errMsg,
-	}
-
-	if !isAccess(auth) {
-		httphelper.SendJSONResponse(
-			w,
-			http.StatusForbidden,
-			model.ForbiddenResponse(errMsg),
-		)
+	tag := data.Get("tag")
+	// check the token -> global token -> tag token
+	if !TokenOk(w, r, model.WTRead, tag) {
 		return
 	}
 
-	targetTag := data.Get("tag")
+	slog.Debug("receive tag (server)", "tag", tag)
 
-	slog.Debug("receive tag (server)", "tag", targetTag)
-
-	errMsg = "require tag"
-	if targetTag == "" {
+	errMsg := "require tag"
+	if tag == "" {
 		httphelper.SendJSONResponse(
 			w,
 			http.StatusBadRequest,
@@ -394,13 +385,13 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 		)
 	}
 
-	nameList := store.ListPackagesByTag(targetTag)
+	nameList := store.ListPackagesByTag(tag)
 
 	if nameList == nil {
 		httphelper.SendJSONResponse(
 			w,
 			http.StatusNotFound,
-			model.NotFoundResponse("there is no package tag as "+targetTag),
+			model.NotFoundResponse("there is no package tag as "+tag),
 		)
 		return
 	}
@@ -412,30 +403,37 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+// syncHandler : handle the sync request which the token has access to write and tag is not required for header
 func syncHandler(w http.ResponseWriter, r *http.Request) {
-	tokenHeadName := config.GetTokenHeadName(model.WTWrite)
+	defer r.Body.Close()
 
-	errMsg := "has no access to write"
-	auth := model.Auth{
-		WtMethod: model.WTWrite,
-		Token:    r.Header.Get(tokenHeadName),
-		ErrMsg:   errMsg,
-	}
-
-	if !isAccess(auth) {
-		httphelper.SendJSONResponse(
-			w,
-			http.StatusForbidden,
-			model.ForbiddenResponse(errMsg),
-		)
+	if !TokenOk(w, r, model.WTWrite, "") {
 		return
 	}
-
 	slog.Debug("sync the meta data")
 	store.SyncMetaDataFromDisk()
 	httphelper.SendJSONResponse(
 		w,
 		http.StatusOK,
 		model.SuccessfulResponse("sync data from disk success", ""),
+	)
+}
+
+// tagListHandler : list all tags the which the client has access to read
+func tagListHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	clientToken := r.Header.Get(config.GetTokenHeadName(model.WTRead))
+	tags := GetAvailableTags(clientToken, model.WTRead)
+
+	slog.Debug("get tag list", "client_token", clientToken, "tags", tags)
+
+	msg := fmt.Sprintf(
+		"has access to %d tags as below",
+		len(tags),
+	)
+	httphelper.SendJSONResponse(
+		w,
+		http.StatusOK,
+		model.SuccessfulResponse(tags, msg),
 	)
 }

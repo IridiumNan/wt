@@ -63,6 +63,8 @@ func SyncMetaDataFromDisk() {
 		return
 	}
 	var isExist bool
+
+	// TODO: remove if the pkg has been rm in the disk
 	for _, entry := range dir {
 		isExist = false
 		info, _ := entry.Info()

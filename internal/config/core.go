@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"time"
 
 	"gitee.com/cai-zixiang_hainan/wt/internal/model"
@@ -76,6 +77,44 @@ func GetServerAddr(wtType model.WTType) (addr string) {
 		addr = serverConfig.Server
 	case model.WTClient:
 		addr = clientConfig.Server
+	}
+
+	return
+}
+
+func GetTagList() (tagList []string) {
+	for tag := range serverConfig.TagTokenMap {
+		tagList = append(tagList, tag)
+	}
+
+	return
+}
+
+func GetTagTokenList(tag string, wtMethod model.WTMethod) (tokenList []string, err error) {
+	tagAuthTokens, ok := serverConfig.TagTokenMap[tag]
+
+	if !ok {
+		return nil, errors.New("tag not found")
+	}
+
+	switch wtMethod {
+	case model.WTRead:
+		tokenList = tagAuthTokens.ReadTokens
+	case model.WTInstall:
+		tokenList = tagAuthTokens.Installtokens
+	case model.WTWrite:
+		tokenList = tagAuthTokens.WriteTokens
+	}
+
+	return
+}
+
+func GetAllTags() (tagList []string) {
+	for tag := range serverConfig.TagTokenMap {
+		if tag == DefaultTagStatic || tag == DefaultTagTemp {
+			continue
+		}
+		tagList = append(tagList, tag)
 	}
 
 	return

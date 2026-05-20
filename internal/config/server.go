@@ -120,6 +120,7 @@ func ServerConfigShow() {
 	fmt.Println("read_token: ", serverConfig.ReadToken)
 	fmt.Println("install_token: ", serverConfig.InstallToken)
 	fmt.Println("write_token: ", serverConfig.WriteToken)
+	fmt.Println("tag_token: ", serverConfig.TagTokenMap)
 	fmt.Println("-------------------------------------------------")
 	fmt.Println("you can alter the config manually by edit the configPath and restart the server")
 }

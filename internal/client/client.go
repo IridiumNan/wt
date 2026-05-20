@@ -29,6 +29,7 @@ func SearchRequest(pattern string) (err error) {
 
 	val := url.Values{}
 	val.Set("name", pattern)
+	val.Set("tag", "")
 	apiRsp, err := doRequest(http.MethodGet, "/search", val, model.WTRead, nil)
 	if err != nil {
 		return
