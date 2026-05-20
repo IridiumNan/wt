@@ -2,6 +2,8 @@
 
 A super lightweight personal/small-team repository management tool, built with Go. Pure CLI interaction (no GUI), perfectly suited for server environments. CS architecture design, single binary file ready to use, zero dependencies and zero configuration, with no unnecessary features.
 
+[中文版](./README.cn.md)
+
 ## 🚀 Features
 
 - **Lightweight**: Single binary file, zero dependencies
@@ -19,22 +21,22 @@ A super lightweight personal/small-team repository management tool, built with G
 #### Linux
 
 ```bash
-wget https://repo.waterman.xin/apps/water-repo/wt-v0.0.1-linux-amd64
-chmod +x wt-v0.0.1-linux-amd64
-mv wt-v0.0.1-linux-amd64 ~/.local/bin/wt  # or any directory in your PATH
+wget https://repo.waterman.xin/apps/water-repo/wt-v0.0.2-linux-amd64
+chmod +x wt-v0.0.2-linux-amd64
+mv wt-v0.0.2-linux-amd64 ~/.local/bin/wt  # or any directory in your PATH
 ```
 
 #### macOS (Apple Silicon)
 
 ```bash
-curl -LO https://repo.waterman.xin/apps/water-repo/wt-v0.0.1-darwin-arm64
-chmod +x wt-v0.0.1-darwin-arm64
-mv wt-v0.0.1-darwin-arm64 ~/.local/bin/wt  # or any directory in your PATH
+curl -LO https://repo.waterman.xin/apps/water-repo/wt-v0.0.2-darwin-arm64
+chmod +x wt-v0.0.2-darwin-arm64
+mv wt-v0.0.2-darwin-arm64 ~/.local/bin/wt  # or any directory in your PATH
 ```
 
 #### Windows
 
-Download from [wt-v0.0.1-windows-amd64.exe](https://repo.waterman.xin/apps/water-repo/wt-v0.0.1-windows-amd64.exe)
+Download from [wt-v0.0.2-windows-amd64.exe](https://repo.waterman.xin/apps/water-repo/wt-v0.0.2-windows-amd64.exe)
 
 > **Note**: Rename the downloaded file to `wt.exe` and add it to your PATH.
 
