@@ -454,6 +454,46 @@ func addTagHandler(w http.ResponseWriter, r *http.Request) {
 	httphelper.SendJSONResponse(
 		w,
 		http.StatusOK,
-		model.SuccessfulResponse("add the tag:"+tagName, ""),
+		model.SuccessfulResponse("add the tag:"+tagName+"successfully", ""),
+	)
+}
+
+func tagUpdateHandler(w http.ResponseWriter, r *http.Request) {
+	var err error
+	defer r.Body.Close()
+	data := r.URL.Query()
+	newTag := data.Get("new_tag")
+	pkgName := data.Get("name")
+
+	var pkg *model.Package
+	pkg, err = store.GetPackage(pkgName)
+	if err != nil {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusNotFound,
+			model.NotFoundResponse("package "+pkgName+" not found"),
+		)
+		return
+	}
+	oldTag := pkg.Tag
+
+	if !TokenOk(w, r, model.WTWrite, oldTag) || !TokenOk(w, r, model.WTWrite, newTag) {
+		return
+	}
+
+	err = store.UpdateTag(pkgName, newTag)
+	if err != nil {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusInternalServerError,
+			model.InternalErrorResponse("fail to update the tag:"+err.Error()),
+		)
+		return
+	}
+
+	httphelper.SendJSONResponse(
+		w,
+		http.StatusOK,
+		model.SuccessfulResponse("update the package "+pkgName+" from old tag "+oldTag+" to new tag "+newTag+" successfully", ""),
 	)
 }

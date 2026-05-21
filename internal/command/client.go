@@ -312,7 +312,7 @@ func uploadCommand(args []string) (err error) {
 		err = client.UploadRequest(args[FirstTargetIndex], "")
 		Done = true
 	case 2:
-		err = client.UploadRequest(args[FirstTargetIndex], args[SecondTarget])
+		err = client.UploadRequest(args[FirstTargetIndex], args[SecondTargetIndex])
 		Done = true
 
 	}
@@ -325,7 +325,7 @@ func mvCommand(args []string) (err error) {
 		return errors.New("args num error")
 	}
 
-	err = client.MvRequest(args[FirstTargetIndex], args[SecondTarget])
+	err = client.MvRequest(args[FirstTargetIndex], args[SecondTargetIndex])
 	Done = true
 
 	return

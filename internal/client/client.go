@@ -258,7 +258,7 @@ func MvRequest(oldName string, newName string) (err error) {
 		return fmt.Errorf("missing old name or new name")
 	}
 
-	fmt.Printf("send request for mv %s to %s (server : %s)", oldName, newName, config.GetServerAddr(model.WTServer))
+	fmt.Printf("send request for mv %s to %s (server : %s)", oldName, newName, config.GetServerAddr(model.WTClient))
 	val := url.Values{}
 	val.Set("old_name", oldName)
 	val.Set("new_name", newName)
@@ -359,6 +359,28 @@ func AddTagRequest(tagName string) (err error) {
 	err = json.Unmarshal(jsonData, &res)
 
 	fmt.Println(res)
+
+	return
+}
+
+func UpdateTagRequest(pkgName string, newTag string) (err error) {
+	val := url.Values{}
+	val.Set("name", pkgName)
+	val.Set("new_tag", newTag)
+
+	fmt.Printf("send request for update the package : %s to new tag : %s (server : %s)", pkgName, newTag, config.GetServerAddr(model.WTClient))
+
+	apiRsp, err := doRequest(http.MethodPut, "/tag/update", val, model.WTWrite, nil)
+	if err != nil {
+		return
+	}
+
+	jsonData, _ := json.Marshal(apiRsp.Data)
+
+	var data string
+	err = json.Unmarshal(jsonData, &data)
+
+	fmt.Println(data)
 
 	return
 }
