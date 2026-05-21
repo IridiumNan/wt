@@ -241,6 +241,9 @@ func tagCommand(args []string) (err error) {
 		case "add":
 			err = client.AddTagRequest(args[SecondTargetIndex])
 			Done = true
+		case "rm":
+			err = client.TagRmRequest(args[SecondTargetIndex])
+			Done = true
 		default:
 			err = client.UpdateTagRequest(args[FirstTargetIndex], args[SecondTargetIndex])
 			Done = true

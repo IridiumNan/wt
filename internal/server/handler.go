@@ -525,6 +525,8 @@ func tagRmHandler(w http.ResponseWriter, r *http.Request) {
 
 	}
 
+	pkgList := store.ListPackagesByTag(tag)
+
 	err = store.RemoveTag(tag)
 	if err != nil {
 		httphelper.SendJSONResponse(
@@ -532,5 +534,33 @@ func tagRmHandler(w http.ResponseWriter, r *http.Request) {
 			http.StatusInternalServerError,
 			model.InternalErrorResponse("error when remove the tag: "+err.Error()),
 		)
+		return
 	}
+
+	err = store.SyncMetaDataToFile()
+	if err != nil {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusInternalServerError,
+			model.InternalErrorResponse("error when sync the data to disk file"+err.Error()),
+		)
+		return
+	}
+
+	config.DeleteTagTokenList(tag)
+
+	movedPackages := ""
+	for i := range pkgList {
+		movedPackages += pkgList[i] + "\n"
+	}
+
+	successMsg := fmt.Sprintf(
+		"remove the tag %s success and packages below has been retaged as temp:\n%v",
+		tag, movedPackages,
+	)
+	httphelper.SendJSONResponse(
+		w,
+		http.StatusOK,
+		model.SuccessfulResponse(successMsg, ""),
+	)
 }

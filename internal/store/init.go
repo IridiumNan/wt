@@ -77,10 +77,14 @@ func InitData(manualPath string) (err error) {
 		return
 	}
 
+	err = json.Unmarshal(byteData, &metaData)
+	if err != nil {
+		panic("fail to unmarshal meta data from disk")
+	}
 	// if the meta data exist which means this dir has be used
 	// sync lastest file info to meta data
 	SyncMetaDataFromDisk()
-	err = syncMetaDataToFile(metaData)
+	err = SyncMetaDataToFile()
 	if err != nil {
 		slog.Error("fail to sync memory data to file", "filePath", config.MetaDataPath, "err", err)
 		return

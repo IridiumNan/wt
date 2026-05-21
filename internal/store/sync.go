@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"gitee.com/cai-zixiang_hainan/wt/internal/config"
-	"gitee.com/cai-zixiang_hainan/wt/internal/model"
 )
 
 // writeMetaData : atomically the byteData to MetaDataPath
@@ -43,7 +42,7 @@ func writeMetaData(byteData []byte) (err error) {
 }
 
 // sync the meta data to file
-func syncMetaDataToFile(metaData *model.MetaData) (err error) {
+func SyncMetaDataToFile() (err error) {
 	byteData, _ := json.MarshalIndent(metaData, "", "	")
 
 	err = writeMetaData(byteData)
@@ -100,7 +99,7 @@ func SyncMetaDataFromDisk() {
 		}
 	}
 
-	err = syncMetaDataToFile(metaData)
+	err = SyncMetaDataToFile()
 	if err != nil {
 		slog.Error("SyncMetaDataFromDisk error when sync to file ", "error", err)
 	}

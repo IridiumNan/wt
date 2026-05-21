@@ -79,7 +79,7 @@ func AddPackage(info fs.FileInfo) {
 	metaData.DataMap[info.Name()] = getDefaultPackage(info)
 	metaData.TagMap[config.DefaultTagTemp] = append(metaData.TagMap[config.DefaultTagTemp], info.Name())
 
-	err := syncMetaDataToFile(metaData)
+	err := SyncMetaDataToFile()
 	if err != nil {
 		panic(err)
 	}
@@ -110,7 +110,7 @@ func RenamePackage(oldName string, newName string) (err error) {
 
 	delete(metaData.DataMap, oldName)
 
-	err = syncMetaDataToFile(metaData)
+	err = SyncMetaDataToFile()
 	return
 }
 
@@ -140,7 +140,7 @@ func DeletePackageByName(pkgName string) (err error) {
 
 	delete(metaData.DataMap, pkgName)
 
-	err = syncMetaDataToFile(metaData)
+	err = SyncMetaDataToFile()
 	if err != nil {
 		panic(err)
 	}
@@ -217,7 +217,7 @@ func UpdateTag(pkgName string, newTag string) (err error) {
 
 	pkg.Tag = newTag
 
-	err = syncMetaDataToFile(metaData)
+	err = SyncMetaDataToFile()
 	return
 }
 

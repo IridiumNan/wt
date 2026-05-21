@@ -347,7 +347,8 @@ func AddTagRequest(tagName string) (err error) {
 
 	fmt.Println("send request for add new tag:", tagName)
 
-	apiRsp, err := doRequest(http.MethodPost, "/tag/add", val, model.WTWrite, nil)
+	var apiRsp *model.APIResponse
+	apiRsp, err = doRequest(http.MethodPost, "/tag/add", val, model.WTWrite, nil)
 	if err != nil {
 		return
 	}
@@ -370,21 +371,44 @@ func UpdateTagRequest(pkgName string, newTag string) (err error) {
 
 	fmt.Printf("send request for update the package : %s to new tag : %s (server : %s)", pkgName, newTag, config.GetServerAddr(model.WTClient))
 
-	apiRsp, err := doRequest(http.MethodPut, "/tag/update", val, model.WTWrite, nil)
+	var apiRsp *model.APIResponse
+	apiRsp, err = doRequest(http.MethodPut, "/tag/update", val, model.WTWrite, nil)
 	if err != nil {
 		return
 	}
 
-	jsonData, _ := json.Marshal(apiRsp.Data)
-
-	var data string
-	err = json.Unmarshal(jsonData, &data)
-
+	if apiRsp.Code != http.StatusOK {
+		return errors.New(apiRsp.Error)
+	}
+	data := apiRsp.Data
 	fmt.Println(data)
 
 	return
 }
 
+func TagRmRequest(tagName string) (err error) {
+	val := url.Values{}
+	val.Set("tag", tagName)
+
+	fmt.Println("send request for rm the tag ", tagName)
+
+	var apiRsp *model.APIResponse
+	apiRsp, err = doRequest(http.MethodPost, "/tag/rm", val, model.WTWrite, nil)
+	if err != nil {
+		return
+	}
+
+	if apiRsp.Code != http.StatusOK {
+		return errors.New(apiRsp.Error)
+	}
+
+	data := apiRsp.Data
+	fmt.Println(data)
+
+	return
+}
+
+// doRequest : this function will choose the corect token
 func doRequest(
 	method string,
 	endpoint string,
