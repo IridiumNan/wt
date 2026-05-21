@@ -501,3 +501,36 @@ func tagUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		model.SuccessfulResponse("update the package "+pkgName+" from old tag "+oldTag+" to new tag "+newTag+" successfully", ""),
 	)
 }
+
+func tagRmHandler(w http.ResponseWriter, r *http.Request) {
+	var err error
+	defer r.Body.Close()
+	data := r.URL.Query()
+	tag := data.Get("tag")
+
+	slog.Debug("tag rm request check", "tag", tag)
+
+	if !TokenOk(w, r, model.WTWrite, "") {
+		return
+	}
+	tagList := config.GetTagList()
+
+	if !slices.Contains(tagList, tag) {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusNotFound,
+			model.NotFoundResponse("tag "+tag+" not found"),
+		)
+		return
+
+	}
+
+	err = store.RemoveTag(tag)
+	if err != nil {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusInternalServerError,
+			model.InternalErrorResponse("error when remove the tag: "+err.Error()),
+		)
+	}
+}

@@ -125,6 +125,7 @@ func AddTagTokenList(tag string) {
 	writeServerConfig(configPath)
 }
 
+// DeleteTagTokenList : delete this tag tokens map in server config
 func DeleteTagTokenList(tag string) {
 	if _, exist := serverConfig.TagTokenMap[tag]; !exist {
 		return
