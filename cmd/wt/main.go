@@ -26,7 +26,7 @@ func helpCommand(args []string) {
 	case "advance":
 		fmt.Println(command.AdvanceManual)
 	default:
-		fmt.Println(command.DefaultManual)
+		command.Usage(args[0])
 	}
 }
 
@@ -45,6 +45,6 @@ func main() {
 		command.ServerMain(args[CMDINX:], DEBUG)
 	default:
 		// command.NewClientMain(args[CMDINX:], DEBUG)
-		command.NewClientMain(args[CMDINX:], DEBUG)
+		command.ClientMain(args[CMDINX:], DEBUG)
 	}
 }

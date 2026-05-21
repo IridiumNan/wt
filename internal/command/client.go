@@ -77,121 +77,7 @@ func Usage(command string) {
 	fmt.Println("\nFor more information, use: wt help")
 }
 
-func handleZeroTarget(command string) (err error) {
-	switch command {
-	case "sync":
-		err = client.SyncRequest()
-		Done = true
-	case "ls", "list":
-		err = client.ListRequest(config.DefaultTagTemp)
-		Done = true
-	case "help", "--help", "-h":
-		fmt.Println(DefaultManual)
-		Done = true
-	case "tags":
-		err = client.TagListRequest()
-		Done = true
-	}
-
-	return
-}
-
-func handleOneTarget(command string, args []string) (err error) {
-	firstTarget := args[FirstTargetIndex]
-
-	switch command {
-	case "search":
-		err = client.SearchRequest(firstTarget)
-		Done = true
-	case "info":
-		err = client.InfoRequest(firstTarget)
-		Done = true
-	case "install":
-		err = client.InstallRequest(firstTarget)
-		Done = true
-	case "rm":
-		err = client.RmRequest(firstTarget)
-		Done = true
-	case "list", "ls":
-		err = client.ListRequest(firstTarget)
-		Done = true
-	case "upload":
-		err = client.UploadRequest(firstTarget, "")
-		Done = true
-	case "config", "-c":
-		if firstTarget == "show" {
-			config.ClientConfigShow()
-			Done = true
-		}
-	case "help", "--help", "-h":
-		if firstTarget == "simple" {
-			fmt.Println(SimpleManual)
-		} else if firstTarget == "advance" {
-			fmt.Println(AdvanceManual)
-		} else {
-			fmt.Print(DefaultManual)
-		}
-		Done = true
-	}
-
-	return
-}
-
-func handleTwoTarget(command string, args []string) (err error) {
-	firstTarget := args[FirstTargetIndex]
-	secondTarget := args[SecondTargetIndex]
-
-	switch command {
-	case "upload":
-		err = client.UploadRequest(firstTarget, secondTarget)
-		Done = true
-	case "mv":
-		err = client.MvRequest(firstTarget, secondTarget)
-		Done = true
-	case "config":
-		err = config.AlterClientConfig(firstTarget, secondTarget)
-		Done = true
-	}
-	return
-}
-
 func ClientMain(args []string, debug bool) {
-	loghelper.InitClientLogger(debug)
-
-	err := config.InitClientConfig()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	command := args[CommandIndex]
-	slog.Debug("client exec command", "command", command)
-	args = args[1:]
-
-	switch len(args) {
-	case 0:
-		err = handleZeroTarget(command)
-	case 1:
-		err = handleOneTarget(command, args)
-	case 2:
-		err = handleTwoTarget(command, args)
-	default:
-		fmt.Printf("too many arguments for command %s\n", command)
-		Usage(command)
-		return
-	}
-
-	if err != nil {
-		fmt.Println("fail to exec ", command, " err :", err.Error())
-		Usage(command)
-	}
-	if !Done {
-		fmt.Println("Bad Usage")
-		Usage(command)
-	}
-}
-
-func NewClientMain(args []string, debug bool) {
 	loghelper.InitClientLogger(debug)
 
 	err := config.InitClientConfig()
@@ -202,6 +88,8 @@ func NewClientMain(args []string, debug bool) {
 
 	command := args[CommandIndex]
 	args = args[CommandIndex+1:]
+
+	slog.Debug("check command and args for client", "command", command, "args", args)
 
 	switch command {
 
@@ -258,7 +146,7 @@ func searchCommand(args []string) (err error) {
 		return errors.New("search pattern is required")
 	}
 
-	err = client.SearchRequest(args[0])
+	err = client.SearchRequest(args[FirstTargetIndex])
 	Done = true
 
 	return
@@ -343,12 +231,14 @@ func syncCommand() (err error) {
 func tagCommand(args []string) (err error) {
 	switch len(args) {
 	case 1:
-		err = client.TagListRequest()
-		Done = true
+		switch args[FirstTargetIndex] {
+		case "ls", "list":
+			err = client.TagListRequest()
+			Done = true
+		}
 	case 2:
 		switch args[FirstTargetIndex] {
 		case "add":
-			fmt.Println("enter the tag add branch")
 			err = client.AddTagRequest(args[SecondTargetIndex])
 			Done = true
 		default:
