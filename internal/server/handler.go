@@ -438,7 +438,22 @@ func tagListHandler(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
-// func addTagHandler(w http.ResponseWriter, r *http.Request) {
-// 	defer r.Body.Close()
-//
-// }
+func addTagHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	data := r.URL.Query()
+	tagName := data.Get("tag")
+
+	if !TokenOk(w, r, model.WTWrite, "") {
+		return
+	}
+
+	config.AddTagTokenList(tagName)
+
+	slog.Info("add a new tag", "tagName", tagName)
+
+	httphelper.SendJSONResponse(
+		w,
+		http.StatusOK,
+		model.SuccessfulResponse("add the tag:"+tagName, ""),
+	)
+}

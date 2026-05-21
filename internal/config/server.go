@@ -29,6 +29,7 @@ func queryServerConfig() (serverConfig *model.ServerConfig) {
 		ReadToken:    queryServerToken(querypresets.ServerReadTokenQuery),
 		InstallToken: queryServerToken(querypresets.ServerInstallTokenQuery),
 		WriteToken:   queryServerToken(querypresets.ServerWriteTokenQuery),
+		TagTokenMap:  make(map[string]model.TagAuthTokens),
 	}
 
 	return

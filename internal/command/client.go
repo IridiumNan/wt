@@ -1,6 +1,7 @@
 package command
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -144,9 +145,6 @@ func handleTwoTarget(command string, args []string) (err error) {
 	case "upload":
 		err = client.UploadRequest(firstTarget, secondTarget)
 		Done = true
-	// case "replace":
-	// 	err = client.ReplaceRequest(firstTarget, secondTarget)
-	// 	Done = true
 	case "mv":
 		err = client.MvRequest(firstTarget, secondTarget)
 		Done = true
@@ -191,4 +189,179 @@ func ClientMain(args []string, debug bool) {
 		fmt.Println("Bad Usage")
 		Usage(command)
 	}
+}
+
+func NewClientMain(args []string, debug bool) {
+	loghelper.InitClientLogger(debug)
+
+	err := config.InitClientConfig()
+	if err != nil {
+		fmt.Println("err when init the client config: ", err)
+		return
+	}
+
+	command := args[CommandIndex]
+	args = args[CommandIndex+1:]
+
+	fmt.Println("command:", command)
+	fmt.Println("enter args:", args)
+
+	switch command {
+
+	case "config", "-c":
+		err = configCommand(args)
+	case "search":
+		err = searchCommand(args)
+	case "info":
+		err = infoCommand(args)
+	case "install":
+		err = installCommand(args)
+	case "upload":
+		err = uploadCommand(args)
+	case "mv":
+		err = mvCommand(args)
+	case "rm":
+		err = rmCommand(args)
+	case "ls", "list":
+		err = listCommand(args)
+	case "sync":
+		err = syncCommand()
+	case "tag":
+		err = tagCommand(args)
+	}
+
+	if err != nil {
+		Usage(command)
+	}
+
+	if err != nil {
+		fmt.Println("fail to exec ", command, " err :", err.Error())
+		Usage(command)
+	}
+	if !Done {
+		fmt.Println("Bad Usage")
+		Usage(command)
+	}
+}
+
+func configCommand(args []string) (err error) {
+	switch len(args) {
+	case 0:
+		return errors.New("args required")
+	case 1:
+		if args[FirstTargetIndex] == "show" {
+			config.ClientConfigShow()
+			Done = true
+		}
+	case 2:
+		err = config.AlterClientConfig(args[FirstTargetIndex], args[SecondTargetIndex])
+		Done = true
+	}
+
+	return
+}
+
+func searchCommand(args []string) (err error) {
+	if len(args) == 0 {
+		return errors.New("search pattern is required")
+	}
+
+	err = client.SearchRequest(args[0])
+	Done = true
+
+	return
+}
+
+func listCommand(args []string) (err error) {
+	switch len(args) {
+	case 0:
+		err = client.ListRequest(config.DefaultTagTemp)
+		Done = true
+	case 1:
+		err = client.ListRequest(args[FirstTargetIndex])
+		Done = true
+	}
+	return
+}
+
+func infoCommand(args []string) (err error) {
+	if len(args) == 0 {
+		Done = true
+		return errors.New("package name is required")
+	}
+	err = client.InfoRequest(args[FirstTargetIndex])
+	Done = true
+	return
+}
+
+func installCommand(args []string) (err error) {
+	if len(args) == 0 {
+		Done = true
+		return errors.New("package name is required")
+	}
+	err = client.InstallRequest(args[FirstTargetIndex])
+	Done = true
+	return
+}
+
+func uploadCommand(args []string) (err error) {
+	switch len(args) {
+	case 0:
+		return errors.New("local package path is required")
+	case 1:
+		err = client.UploadRequest(args[FirstTargetIndex], "")
+		Done = true
+	case 2:
+		err = client.UploadRequest(args[FirstTargetIndex], args[SecondTarget])
+		Done = true
+
+	}
+
+	return
+}
+
+func mvCommand(args []string) (err error) {
+	if len(args) != 2 {
+		return errors.New("args num error")
+	}
+
+	err = client.MvRequest(args[FirstTargetIndex], args[SecondTarget])
+	Done = true
+
+	return
+}
+
+func rmCommand(args []string) (err error) {
+	if len(args) != 1 {
+		return errors.New("args num error")
+	}
+
+	err = client.RmRequest(args[FirstTargetIndex])
+	Done = true
+
+	return
+}
+
+func syncCommand() (err error) {
+	err = client.SyncRequest()
+	Done = true
+	return
+}
+
+func tagCommand(args []string) (err error) {
+	fmt.Println("enter the tag command branch")
+	switch len(args) {
+	case 1:
+		err = client.TagListRequest()
+		Done = true
+	case 2:
+		switch args[0] {
+		case "add":
+			fmt.Println("enter the tag add branch")
+			err = client.AddTagRequest(args[SecondTargetIndex])
+			Done = true
+		}
+	}
+
+	return
 }

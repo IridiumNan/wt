@@ -10,10 +10,25 @@ import (
 )
 
 const (
-	DEBUG   = false
+	DEBUG   = true
 	VERSION = "0.0.3"
 	CMDINX  = 1
 )
+
+func helpCommand(args []string) {
+	if len(args) == 0 {
+		fmt.Println(command.DefaultManual)
+		return
+	}
+	switch args[0] {
+	case "simple":
+		fmt.Println(command.SimpleManual)
+	case "advance":
+		fmt.Println(command.AdvanceManual)
+	default:
+		fmt.Println(command.DefaultManual)
+	}
+}
 
 func main() {
 	args := os.Args
@@ -24,9 +39,12 @@ func main() {
 		if err != nil {
 			fmt.Println("error when uninstall: ", err)
 		}
+	case "help", "-h", "--help":
+		helpCommand(args[CMDINX+1:])
 	case "server", "serve":
 		command.ServerMain(args[CMDINX:], DEBUG)
 	default:
-		command.ClientMain(args[CMDINX:], DEBUG)
+		// command.NewClientMain(args[CMDINX:], DEBUG)
+		command.NewClientMain(args[CMDINX:], DEBUG)
 	}
 }

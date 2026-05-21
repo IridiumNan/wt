@@ -341,6 +341,28 @@ func TagListRequest() (err error) {
 	return
 }
 
+func AddTagRequest(tagName string) (err error) {
+	val := url.Values{}
+	val.Set("tag", tagName)
+
+	fmt.Println("send request for add new tag:", tagName)
+
+	apiRsp, err := doRequest(http.MethodPost, "/tag/add", val, model.WTWrite, nil)
+	if err != nil {
+		return
+	}
+
+	jsonData, _ := json.Marshal(apiRsp.Data)
+
+	var res string
+
+	err = json.Unmarshal(jsonData, &res)
+
+	fmt.Println(res)
+
+	return
+}
+
 func doRequest(
 	method string,
 	endpoint string,

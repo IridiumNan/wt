@@ -139,6 +139,7 @@ func RemoveTag(tagName string) error
 ```
 
 校验项：
+
 - `AddTag`：标签名不能为空，不能与已有标签重复
 - `RemoveTag`：不能删除 `temp` 和 `static`
 - `ChangePackageTag`：包必须存在，目标标签必须存在
@@ -222,6 +223,7 @@ wt tag <pkg-name> <tag-name> → handleTwoTarget("tag", args) 调用 TagChangeRe
 ```
 
 建议在 `handleTwoTarget` 的 switch 中新增 `"tag"` case，内部根据 `firstTarget` 的值分流：
+
 - `firstTarget == "add"` → `TagAddRequest(secondTarget)`  
 - `firstTarget == "rm"` → `TagRmRequest(secondTarget)`
 - 其他 → `TagChangeRequest(firstTarget, secondTarget)`（修改包标签）

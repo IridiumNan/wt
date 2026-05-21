@@ -109,6 +109,7 @@ func GetTagTokenList(tag string, wtMethod model.WTMethod) (tokenList []string, e
 	return
 }
 
+// for super admin to add tag
 func AddTagTokenList(tag string) {
 	if _, exist := serverConfig.TagTokenMap[tag]; exist {
 		return
@@ -119,6 +120,9 @@ func AddTagTokenList(tag string) {
 		Installtokens: []string{},
 		WriteTokens:   []string{},
 	}
+
+	configPath, _ := GetServerConfigPath()
+	writeServerConfig(configPath)
 }
 
 func DeleteTagTokenList(tag string) {
