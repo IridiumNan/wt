@@ -165,3 +165,14 @@ func AlterServerConfig(object string, operation string, value string) (err error
 
 	return
 }
+
+func AddTagToken(tag string, token string, wtMethod model.WTMethod) {
+	switch wtMethod {
+	case model.WTRead:
+		serverConfig.AddTagTokens(tag, token, "", "")
+	case model.WTInstall:
+		serverConfig.AddTagTokens(tag, "", token, "")
+	case model.WTWrite:
+		serverConfig.AddTagTokens(tag, "", "", token)
+	}
+}
