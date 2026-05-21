@@ -10,12 +10,6 @@ import (
 	"gitee.com/cai-zixiang_hainan/wt/pkg/loghelper"
 )
 
-const (
-	CommandIndex      = 0
-	FirstTargetIndex  = 0
-	SecondTargetIndex = 1
-)
-
 var Done bool
 
 func Usage(command string) {

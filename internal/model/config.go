@@ -70,4 +70,6 @@ func (sc *ServerConfig) AddTagTokens(tagName string, readToken string, installTo
 	authTokens.ReadTokens = addIfNotEmpty(authTokens.ReadTokens, readToken)
 	authTokens.Installtokens = addIfNotEmpty(authTokens.Installtokens, installToken)
 	authTokens.WriteTokens = addIfNotEmpty(authTokens.WriteTokens, writeToken)
+
+	sc.TagTokenMap[tagName] = authTokens
 }

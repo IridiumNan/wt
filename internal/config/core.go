@@ -7,6 +7,18 @@ import (
 	"gitee.com/cai-zixiang_hainan/wt/internal/model"
 )
 
+const (
+	DefaultTagTemp      = "temp"
+	DefaultTagStatic    = "static"
+	ClientConfigPath    = "/.config/water-repo/client_config.json"
+	ServerConfigPath    = "/.config/water-repo/server_config.json"
+	ReadTokenJSONKey    = "read_token"
+	InstallTokenJSONKey = "install_token"
+	WriteTokenJSONKey   = "write_token"
+	metaDataFileName    = "meta_data.json"
+	LogFile             = "log.txt"
+)
+
 func GetTokenHeadName(wtMethod model.WTMethod) (headName string) {
 	switch wtMethod {
 	case model.WTRead:
@@ -107,6 +119,11 @@ func GetTagTokenList(tag string, wtMethod model.WTMethod) (tokenList []string, e
 	}
 
 	return
+}
+
+func SyncServerConfig() {
+	configPath, _ := GetServerConfigPath()
+	writeServerConfig(configPath)
 }
 
 // for super admin to add tag

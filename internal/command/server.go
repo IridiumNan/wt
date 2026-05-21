@@ -13,62 +13,66 @@ import (
 	"gitee.com/cai-zixiang_hainan/wt/pkg/loghelper"
 )
 
-const (
-	FlagIdx      = 1
-	FirstTarget  = 2
-	SecondTarget = 3
-	ThirdTarget  = 4
-)
+func execTagTokenCommand(args []string) (err error) {
+	tag := args[SecondTargetIndex]
+	TokenJSONKey := args[ThirdTargetIndex]
+	operation := args[FourthTargetIndex]
+	token := args[FifthTargetIndex]
 
-func handleServerZeroTarget(args []string) (err error) {
-	cmdFlag := args[FlagIdx]
-	switch cmdFlag {
+	switch operation {
+	case "add":
+		switch TokenJSONKey {
+		case config.ReadTokenJSONKey:
+			config.AddTagToken(tag, token, model.WTRead)
+		case config.InstallTokenJSONKey:
+			config.AddTagToken(tag, token, model.WTInstall)
+		case config.WriteTokenJSONKey:
+			config.AddTagToken(tag, token, model.WTWrite)
+		}
+		fmt.Printf("add the %s -> %s for tag %s", TokenJSONKey, token, tag)
+		fmt.Println("you need to restart the server to make this config reload")
+	case "rm":
+		return
+
+	}
+
+	config.SyncServerConfig()
+
+	return
+}
+
+func newExecCommand(args []string) (err error) {
+	command := args[CommandIndex]
+
+	// stript the command
+	args = args[1:]
+
+	slog.Debug("exec command in server", "command", command, "args", args)
+	switch command {
 	case "log":
-		// readLog
 		err = loghelper.ReadServerLog()
 		Done = true
-	default:
-		err = fmt.Errorf("unknow command : %s", cmdFlag)
-		Done = true
-
-	}
-
-	return
-}
-
-func handleServerOneTarget(cmdFlag string, args []string) (err error) {
-	switch cmdFlag {
-	case "-d", "dir":
-		err = store.InitData(args[FirstTarget])
-		Done = false
-	case "-c", "config":
-		if args[FirstTarget] == "show" {
-			config.ServerConfigShow()
-			Done = true
-		}
-	default:
-		err = fmt.Errorf("unknow command : %s", cmdFlag)
-		Done = true
-	}
-	return
-}
-
-func execCommand(args []string) (err error) {
-	cmdFlag := args[FlagIdx]
-
-	switch len(args) {
-	case 2:
-		err = handleServerZeroTarget(args)
-	case 3:
-		err = handleServerOneTarget(cmdFlag, args)
-	case 5:
-		if cmdFlag == "config" || cmdFlag == "-c" {
-			err = config.AlterServerConfig(args[FirstTarget], args[SecondTarget], args[ThirdTarget])
-			if err != nil {
-				fmt.Println("restart the server to make config reload")
+	case "config", "-c":
+		if len(args) < 3 {
+			switch args[FirstTargetIndex] {
+			case "show":
+				config.ServerConfigShow()
+				Done = true
+			case config.ReadTokenJSONKey, config.InstallTokenJSONKey, config.WriteTokenJSONKey:
+				err = config.AlterServerConfig(args[FirstTargetIndex], args[SecondTargetIndex], args[ThirdTargetIndex])
+				Done = true
 			}
+		} else if len(args) == 5 && args[FirstTargetIndex] == "tag" {
+			err = execTagTokenCommand(args)
 			Done = true
+
 		}
+	case "dir", "-d":
+		err = store.InitData(args[FirstTargetIndex])
+		Done = false
+	default:
+		err = fmt.Errorf("unknown command: %s", command)
+		Done = true
 	}
 
 	return
@@ -82,13 +86,13 @@ func ServerMain(args []string, debug bool) {
 
 	err = config.InitServerConfig()
 	if err != nil {
-		fmt.Println("server config init err:", err)
-		panic(err)
+		fmt.Printf("server config init err: %s\nyou can try to wt uninstall to remove the previous tags data and rebuild it", err.Error())
+		return
 	}
 
-	// this args contains server as args[0]
+	// args has been stript the server command, and begin with command like "config" "log"
 	if len(args) > 1 {
-		err = execCommand(args)
+		err = newExecCommand(args[1:])
 	}
 	if err != nil {
 		slog.Error("fail to exec server command: " + err.Error())
