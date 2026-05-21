@@ -465,8 +465,12 @@ func tagUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	newTag := data.Get("new_tag")
 	pkgName := data.Get("name")
 
+	slog.Debug("update request check", "pkg_name", pkgName, "new_tag", newTag)
+
 	var pkg *model.Package
 	pkg, err = store.GetPackage(pkgName)
+
+	slog.Debug("check pkg", "pkgInfo", pkg.Name)
 	if err != nil {
 		httphelper.SendJSONResponse(
 			w,

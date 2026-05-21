@@ -203,9 +203,6 @@ func NewClientMain(args []string, debug bool) {
 	command := args[CommandIndex]
 	args = args[CommandIndex+1:]
 
-	fmt.Println("command:", command)
-	fmt.Println("enter args:", args)
-
 	switch command {
 
 	case "config", "-c":
@@ -231,12 +228,7 @@ func NewClientMain(args []string, debug bool) {
 	}
 
 	if err != nil {
-		Usage(command)
-	}
-
-	if err != nil {
 		fmt.Println("fail to exec ", command, " err :", err.Error())
-		Usage(command)
 	}
 	if !Done {
 		fmt.Println("Bad Usage")
@@ -349,16 +341,18 @@ func syncCommand() (err error) {
 }
 
 func tagCommand(args []string) (err error) {
-	fmt.Println("enter the tag command branch")
 	switch len(args) {
 	case 1:
 		err = client.TagListRequest()
 		Done = true
 	case 2:
-		switch args[0] {
+		switch args[FirstTargetIndex] {
 		case "add":
 			fmt.Println("enter the tag add branch")
 			err = client.AddTagRequest(args[SecondTargetIndex])
+			Done = true
+		default:
+			err = client.UpdateTagRequest(args[FirstTargetIndex], args[SecondTargetIndex])
 			Done = true
 		}
 	}
