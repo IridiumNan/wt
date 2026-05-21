@@ -564,3 +564,35 @@ func tagRmHandler(w http.ResponseWriter, r *http.Request) {
 		model.SuccessfulResponse(successMsg, ""),
 	)
 }
+
+// reload the server config file from disk which require the admin write token
+func reloadHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	if !TokenOk(w, r, model.WTWrite, "") {
+		return
+	}
+
+	slog.Debug("reload server config from disk", "func", "reloadHandler")
+
+	err := config.InitServerConfig()
+	if err != nil {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusInternalServerError,
+			model.InternalErrorResponse("error when reload the server config -> "+err.Error()),
+		)
+		return
+	}
+
+	serverConfigPath, _ := config.GetServerConfigPath()
+	data := fmt.Sprintf(
+		"reload server config file from %s success",
+		serverConfigPath,
+	)
+	httphelper.SendJSONResponse(
+		w,
+		http.StatusOK,
+		model.SuccessfulResponse(data, ""),
+	)
+}

@@ -408,6 +408,27 @@ func TagRmRequest(tagName string) (err error) {
 	return
 }
 
+func ReloadRequest() (err error) {
+	val := url.Values{}
+
+	fmt.Println("send request for reload the server config")
+	var apiRsp *model.APIResponse
+	apiRsp, err = doRequest(http.MethodPost, "/reload", val, model.WTWrite, nil)
+	if err != nil {
+		return
+	}
+
+	if apiRsp.Code != http.StatusOK {
+		return errors.New(apiRsp.Error)
+	}
+
+	data := apiRsp.Data
+
+	fmt.Println(data)
+
+	return
+}
+
 // doRequest : this function will choose the corect token
 func doRequest(
 	method string,

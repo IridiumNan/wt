@@ -31,6 +31,8 @@ func queryServerConfig() (serverConfig *model.ServerConfig) {
 		WriteToken:   queryServerToken(querypresets.ServerWriteTokenQuery),
 		TagTokenMap:  make(map[string]model.TagAuthTokens),
 	}
+	serverConfig.AddTagTokens(DefaultTagStatic, "", "", "")
+	serverConfig.AddTagTokens(DefaultTagTemp, "", "", "")
 
 	return
 }

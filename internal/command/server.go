@@ -49,11 +49,13 @@ func newExecCommand(args []string) (err error) {
 
 	slog.Debug("exec command in server", "command", command, "args", args)
 	switch command {
+	case "reload":
+		// reload the config file from disk by api
 	case "log":
 		err = loghelper.ReadServerLog()
 		Done = true
 	case "config", "-c":
-		if len(args) < 3 {
+		if len(args) < 4 {
 			switch args[FirstTargetIndex] {
 			case "show":
 				config.ServerConfigShow()

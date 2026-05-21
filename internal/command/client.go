@@ -107,6 +107,8 @@ func ClientMain(args []string, debug bool) {
 		err = syncCommand()
 	case "tag":
 		err = tagCommand(args)
+	case "reload":
+		err = reloadCommand()
 	}
 
 	if err != nil {
@@ -244,5 +246,11 @@ func tagCommand(args []string) (err error) {
 		}
 	}
 
+	return
+}
+
+func reloadCommand() (err error) {
+	err = client.ReloadRequest()
+	Done = true
 	return
 }
