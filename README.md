@@ -507,6 +507,47 @@ wt server log
 
 ---
 
+## 💡 FZF Integration Tips
+
+[fzf](https://github.com/junegunn/fzf) is a powerful command-line fuzzy finder that works great with Water-Repo. Here are some useful one-liners:
+
+### Search and Interact
+
+```bash
+# Search and get package info
+wt search <pkg> | fzf | xargs -I {} wt info {}
+
+# Search and remove a package
+wt search <pkg> | fzf | xargs -I {} wt rm {}
+
+# Search and download a package
+wt search <pkg> | fzf | xargs -I {} wt install {}
+
+# Search and make a package public
+wt search <pkg> | fzf | xargs -I {} wt public {}
+```
+
+### File Operations
+
+```bash
+# Find a file and upload (interactive file selection)
+wt upload $(fzf)
+```
+
+### Tag Management
+
+```bash
+# List packages by selecting a tag
+wt ls $(wt tag ls | fzf)
+
+# Tag a package (select package and tag interactively)
+wt tag $(wt ls | fzf) $(wt tag ls | fzf)
+```
+
+> **Tip**: Install fzf from [https://github.com/junegunn/fzf](https://github.com/junegunn/fzf) for enhanced interactive workflows.
+
+---
+
 ## 🚧 Planned Features (v0.3.0+)
 
 The following features are under development and will be released in future versions. Existing configuration files and core commands will remain fully backward compatible.

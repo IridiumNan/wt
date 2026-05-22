@@ -507,6 +507,47 @@ wt server log
 
 ---
 
+## 💡 FZF 集成技巧
+
+[fzf](https://github.com/junegunn/fzf) 是一个强大的命令行模糊查找工具，与 Water-Repo 配合使用效果极佳。以下是一些实用的一行命令：
+
+### 搜索与交互
+
+```bash
+# 搜索并获取包信息
+wt search <pkg> | fzf | xargs -I {} wt info {}
+
+# 搜索并删除包
+wt search <pkg> | fzf | xargs -I {} wt rm {}
+
+# 搜索并下载包
+wt search <pkg> | fzf | xargs -I {} wt install {}
+
+# 搜索并公开分享包
+wt search <pkg> | fzf | xargs -I {} wt public {}
+```
+
+### 文件操作
+
+```bash
+# 选择文件并上传（交互式文件选择）
+wt upload $(fzf)
+```
+
+### 标签管理
+
+```bash
+# 选择标签并列出包
+wt ls $(wt tag ls | fzf)
+
+# 为包添加标签（交互式选择包和标签）
+wt tag $(wt ls | fzf) $(wt tag ls | fzf)
+```
+
+> **提示**：从 [https://github.com/junegunn/fzf](https://github.com/junegunn/fzf) 安装 fzf 以获得增强的交互式工作流。
+
+---
+
 ## 🚧 开发中功能 (v0.3.0+)
 
 以下功能正在开发中,将在后续版本中陆续上线,现有配置文件和核心命令保持完全向后兼容。
