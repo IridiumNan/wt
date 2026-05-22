@@ -2,13 +2,27 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"slices"
+	"strings"
 
 	"gitee.com/cai-zixiang_hainan/wt/internal/config"
 	"gitee.com/cai-zixiang_hainan/wt/internal/model"
 	"gitee.com/cai-zixiang_hainan/wt/pkg/httphelper"
+)
+
+var (
+	FunnelOn    = false
+	baseLink, _ = getLinkPrefix()
+	linkDir, _  = filepath.Abs(filepath.Join(config.DataDir, "public"))
+	subPath     = "/wt/public"
+	pkgLinkPool []string
 )
 
 // tokenInList : check if token in tokenList
@@ -91,6 +105,89 @@ func TokenOk(w http.ResponseWriter, r *http.Request, wtMethod model.WTMethod, ta
 		)
 		pass = false
 	}
+
+	return
+}
+
+func getLinkPrefix() (baseLink *url.URL, err error) {
+	cmd := exec.Command("tailscale", "status")
+
+	var out []byte
+	out, err = cmd.Output()
+	if err != nil {
+		return
+	}
+
+	strOut := string(out)
+	tailnetName := strings.Fields(strOut)[2]
+	link := "https://" + tailnetName
+
+	base, _ := url.Parse(link)
+
+	linkPrefix := base.JoinPath(subPath)
+	baseLink = linkPrefix
+
+	return
+}
+
+func turnOnFunnel() (err error) {
+	linkDir = filepath.Join(config.DataDir, "public")
+	linkDir, _ = filepath.Abs(linkDir)
+
+	err = os.MkdirAll(linkDir, 0o755)
+	if err != nil {
+		return
+	}
+
+	cmd := exec.Command("tailscale", "funnel", "--bg", "--set-path", subPath, linkDir)
+	_, err = cmd.Output()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return
+}
+
+func getPackageLink(pkgName string) string {
+	pkgLink := baseLink.JoinPath(pkgName)
+
+	return pkgLink.String()
+}
+
+func addNewLinkIfNotInPool(newLink string) {
+	if slices.Contains(pkgLinkPool, newLink) {
+		return
+	}
+
+	pkgLinkPool = append(pkgLinkPool, newLink)
+}
+
+func exposeSinglePackage(pkgName string) (link string, err error) {
+	if !FunnelOn {
+		err = turnOnFunnel()
+		if err != nil {
+			return
+		}
+	}
+	pkgPath := filepath.Join(config.DataDir, pkgName)
+	pkgPath, _ = filepath.Abs(pkgPath)
+
+	softLinkPath := filepath.Join(linkDir, pkgName)
+	softLinkPath, _ = filepath.Abs(softLinkPath)
+
+	err = os.Symlink(pkgPath, softLinkPath)
+	link = getPackageLink(pkgName)
+
+	if os.IsExist(err) {
+		addNewLinkIfNotInPool(link)
+		err = nil
+		return
+	}
+	if err != nil {
+		return
+	}
+
+	addNewLinkIfNotInPool(link)
 
 	return
 }

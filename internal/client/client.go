@@ -429,6 +429,58 @@ func ReloadRequest() (err error) {
 	return
 }
 
+func PublicRequest(pkgName string) (err error) {
+	val := url.Values{}
+	val.Set("name", pkgName)
+
+	fmt.Println("send request for public the pkg ->", pkgName)
+
+	var apiRsp *model.APIResponse
+	apiRsp, err = doRequest(http.MethodPost, "/public", val, model.WTWrite, nil)
+	if err != nil {
+		return
+	}
+
+	if apiRsp.Code != http.StatusOK {
+		return errors.New(apiRsp.Error)
+	}
+	data := apiRsp.Data
+	fmt.Println("public link -> ", data)
+
+	return
+}
+
+func printLinks(links []string) {
+	fmt.Println("--------------------- available links ------------------------")
+	for i := range links {
+		fmt.Println(links[i])
+	}
+	fmt.Println("--------------------------------------------------------------")
+}
+
+func LinksRequest() (err error) {
+	val := url.Values{}
+	fmt.Println("send request for exist links")
+
+	var apiRsp *model.APIResponse
+	apiRsp, err = doRequest(http.MethodGet, "/links", val, model.WTRead, nil)
+	if err != nil {
+		return
+	}
+
+	if apiRsp.Code != http.StatusOK {
+		return errors.New(apiRsp.Error)
+	}
+
+	data := apiRsp.Data
+	if links, ok := data.([]string); !ok {
+		printLinks(links)
+		return
+	}
+
+	return errors.New("can't read links")
+}
+
 // doRequest : this function will choose the corect token
 func doRequest(
 	method string,

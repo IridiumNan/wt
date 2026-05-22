@@ -109,6 +109,10 @@ func ClientMain(args []string, debug bool) {
 		err = tagCommand(args)
 	case "reload":
 		err = reloadCommand()
+	case "public":
+		err = publicComand(args)
+	case "link", "links":
+		err = linksCommand()
 	}
 
 	if err != nil {
@@ -251,6 +255,18 @@ func tagCommand(args []string) (err error) {
 
 func reloadCommand() (err error) {
 	err = client.ReloadRequest()
+	Done = true
+	return
+}
+
+func publicComand(args []string) (err error) {
+	err = client.PublicRequest(args[FirstTargetIndex])
+	Done = true
+	return
+}
+
+func linksCommand() (err error) {
+	err = client.LinksRequest()
 	Done = true
 	return
 }

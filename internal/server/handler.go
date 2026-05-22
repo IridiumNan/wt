@@ -596,3 +596,69 @@ func reloadHandler(w http.ResponseWriter, r *http.Request) {
 		model.SuccessfulResponse(data, ""),
 	)
 }
+
+func publicHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	data := r.URL.Query()
+	pkgName := data.Get("name")
+
+	pkg, err := store.GetPackage(pkgName)
+	if err != nil {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusNotFound,
+			model.NotFoundResponse("pkg "+pkgName+" not found"),
+		)
+		return
+	}
+
+	tag := pkg.Tag
+
+	if !TokenOk(w, r, model.WTWrite, tag) {
+		return
+	}
+
+	link, err := exposeSinglePackage(pkgName)
+	if err != nil {
+		errMsg := fmt.Sprintf(
+			"error when public pkg -> %s, error -> %s", pkgName, err.Error(),
+		)
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusInternalServerError,
+			model.InternalErrorResponse(errMsg),
+		)
+		return
+	}
+
+	httphelper.SendJSONResponse(
+		w,
+		http.StatusOK,
+		model.SuccessfulResponse(link, ""),
+	)
+}
+
+func linksHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	if !TokenOk(w, r, model.WTRead, "") {
+		return
+	}
+
+	if len(pkgLinkPool) == 0 {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusNotFound,
+			model.NotFoundResponse("there is no public package"),
+		)
+		return
+	}
+
+	httphelper.SendJSONResponse(
+		w,
+		http.StatusOK,
+		model.SuccessfulResponse(pkgLinkPool, ""),
+	)
+
+	return
+}
