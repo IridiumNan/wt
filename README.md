@@ -1,5 +1,9 @@
 # water-repo
 
+[![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
+[![Go Version](https://img.shields.io/badge/go-1.25.9+-blue.svg)](https://golang.org/)
+[![Version](https://img.shields.io/badge/version-v0.2.1-orange.svg)]()
+
 A super lightweight personal/small-team repository management tool, built with Go. Pure CLI interaction (no GUI), perfectly suited for server environments. CS architecture design, single binary file ready to use, zero dependencies and zero configuration, with no unnecessary features.
 
 [中文版](./README.cn.md)
@@ -11,6 +15,7 @@ A super lightweight personal/small-team repository management tool, built with G
 - **Secure**: Token-based permission system with tag-level fine-grained access control
 - **Flexible**: Tag-based package organization
 - **Cross-platform**: Works on Linux, macOS, and Windows
+- **Public Sharing**: Integrated with Tailscale Funnel for easy public package sharing
 
 ---
 
@@ -217,6 +222,10 @@ go build -o wt ./cmd/wt
 | Delete package | `wt rm <package-name>` | Permanently remove a package from the repository |
 | List packages | `wt list [tag]` or `wt ls [tag]` | List all packages or filter by tag |
 | Sync metadata | `wt sync` | Synchronize local metadata with server |
+| Make public | `wt public <package-name>` | Share package publicly via Tailscale Funnel |
+| Revoke public | `wt private <package-name>` | Remove package from public sharing |
+| List public links | `wt links` | Show all publicly shared packages |
+| Reload config | `wt reload` | Reload server configuration without restart |
 | Show help | `wt help` | Display help information |
 
 ---
@@ -404,6 +413,41 @@ wt tag list
 wt server tag frontend write_token add my-team-token
 ```
 
+### Public Sharing with Tailscale Funnel
+
+Water-Repo integrates with [Tailscale Funnel](https://tailscale.com/kb/1223/funnel) to enable secure public sharing of packages without exposing your entire server.
+
+#### Prerequisites
+
+1. Install and configure [Tailscale](https://tailscale.com/) on your server
+2. Enable Funnel for your Tailscale node:
+   ```bash
+   tailscale funnel 443 on
+   ```
+
+#### Commands
+
+```bash
+# Make a package publicly accessible
+wt public my-app-v1
+# Returns: https://your-node.tailnet.ts.net/install?name=my-app-v1
+
+# View all publicly shared packages
+wt links
+
+# Revoke public access for a package
+wt private my-app-v1
+```
+
+#### How It Works
+
+- When you run `wt public <package>`, Water-Repo creates a symlink in a special directory that Tailscale Funnel exposes
+- The package becomes accessible via a public HTTPS URL without requiring authentication tokens
+- Use `wt private <package>` to remove the public link
+- Use `wt links` to audit all currently shared packages
+
+> **Security Note**: Public packages are accessible to anyone with the link. Only share packages you intend to make public.
+
 ---
 
 ## 🛠️ Advanced Usage
@@ -463,7 +507,48 @@ wt server log
 
 ---
 
-## 🚧 Planned Features (v0.2.0+)
+## 💡 FZF Integration Tips
+
+[fzf](https://github.com/junegunn/fzf) is a powerful command-line fuzzy finder that works great with Water-Repo. Here are some useful one-liners:
+
+### Search and Interact
+
+```bash
+# Search and get package info
+wt search <pkg> | fzf | xargs -I {} wt info {}
+
+# Search and remove a package
+wt search <pkg> | fzf | xargs -I {} wt rm {}
+
+# Search and download a package
+wt search <pkg> | fzf | xargs -I {} wt install {}
+
+# Search and make a package public
+wt search <pkg> | fzf | xargs -I {} wt public {}
+```
+
+### File Operations
+
+```bash
+# Find a file and upload (interactive file selection)
+wt upload $(fzf)
+```
+
+### Tag Management
+
+```bash
+# List packages by selecting a tag
+wt ls $(wt tag ls | fzf)
+
+# Tag a package (select package and tag interactively)
+wt tag $(wt ls | fzf) $(wt tag ls | fzf)
+```
+
+> **Tip**: Install fzf from [https://github.com/junegunn/fzf](https://github.com/junegunn/fzf) for enhanced interactive workflows.
+
+---
+
+## 🚧 Planned Features (v0.3.0+)
 
 The following features are under development and will be released in future versions. Existing configuration files and core commands will remain fully backward compatible.
 
@@ -471,7 +556,7 @@ The following features are under development and will be released in future vers
 
 1. **Batch Operations**
    - `wt clear <tag>`: Clear all packages under a tag (with confirmation)
-   - `wt install-tag <tag>`: Batch download all packages under a tag
+   - `wt install-tag <tag>`: Batch download all packages under a specific tag
 
 2. **Dynamic Mirror Source Management**
    - Support adding multiple remote wt servers as mirror sources
@@ -485,12 +570,11 @@ The following features are under development and will be released in future vers
    - Discovered nodes automatically added to mirror source list, no manual configuration needed
    - Support one-click disable of auto-discovery feature
 
-### Planned Features
+### Recently Completed (v0.2.0)
 
-1. **`wt public` One-click Public Sharing**: Make specified package publicly available to entire LAN, anyone can download without Token configuration
-2. **Download Progress Display**: Real-time download speed and progress bar in command line
-3. **Resume Broken Downloads**: Support resuming large file downloads, no need to restart after interruption
-4. **`wt config` Configuration Management Command**: Modify configuration via command line without manually editing JSON files
+1. ✅ **Tailscale Funnel Integration**: Public package sharing via `wt public/private/links`
+2. ✅ **Server Config Reload**: Dynamic configuration updates via `wt reload` without restart
+3. ✅ **Enhanced Help System**: Comprehensive documentation across all command levels
 
 ---
 

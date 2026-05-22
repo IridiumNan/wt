@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/badge/go-1.25.9+-blue.svg)](https://golang.org/)
-[![Version](https://img.shields.io/badge/version-v0.1.2-orange.svg)]()
+[![Version](https://img.shields.io/badge/version-v0.2.1-orange.svg)]()
 
 超轻量级个人/小团队仓库管理工具,基于 Go 开发,纯 CLI 交互(无图形化界面),天生适配服务器环境;CS 架构设计,单二进制文件开箱即用,零依赖零配置,没有任何多余功能。
 
@@ -15,6 +15,7 @@
 - **安全可靠**：基于 Token 的权限控制系统,支持标签级细粒度权限
 - **灵活组织**：标签化管理包资源
 - **跨平台支持**：支持 Linux、macOS 和 Windows
+- **公开分享**：集成 Tailscale Funnel，轻松实现包的公开分享
 
 ---
 
@@ -221,6 +222,10 @@ go build -o wt ./cmd/wt
 | 删除包 | `wt rm <包名>` | 永久移除仓库中的指定包 |
 | 列出包 | `wt list [标签]` 或 `wt ls [标签]` | 列出所有包或按标签过滤 |
 | 同步元数据 | `wt sync` | 同步本地元数据与服务器 |
+| 公开分享 | `wt public <包名>` | 通过 Tailscale Funnel 公开分享包 |
+| 取消公开 | `wt private <包名>` | 移除包的公开分享 |
+| 查看公开链接 | `wt links` | 显示所有公开分享的包 |
+| 重载配置 | `wt reload` | 无需重启即可重载服务器配置 |
 | 显示帮助 | `wt help` | 显示帮助信息 |
 
 ---
@@ -408,6 +413,41 @@ wt tag list
 wt server tag frontend write_token add my-team-token
 ```
 
+### 使用 Tailscale Funnel 公开分享
+
+Water-Repo 集成了 [Tailscale Funnel](https://tailscale.com/kb/1223/funnel)，可以安全地公开分享包，而无需暴露整个服务器。
+
+#### 前置要求
+
+1. 在服务器上安装并配置 [Tailscale](https://tailscale.com/)
+2. 为您的 Tailscale 节点启用 Funnel：
+   ```bash
+   tailscale funnel 443 on
+   ```
+
+#### 命令
+
+```bash
+# 公开分享包
+wt public my-app-v1
+# 返回: https://your-node.tailnet.ts.net/install?name=my-app-v1
+
+# 查看所有公开分享的包
+wt links
+
+# 取消包的公开分享
+wt private my-app-v1
+```
+
+#### 工作原理
+
+- 运行 `wt public <包名>` 时，Water-Repo 会在 Tailscale Funnel 暴露的特殊目录中创建符号链接
+- 包可以通过公共 HTTPS URL 访问，无需认证令牌
+- 使用 `wt private <包名>` 移除公开链接
+- 使用 `wt links` 审计当前所有分享的包
+
+> **安全提示**：公开分享的包对任何拥有链接的人都可访问。仅分享您打算公开的包。
+
 ---
 
 ## 🛠️ 进阶用法
@@ -467,7 +507,48 @@ wt server log
 
 ---
 
-## 🚧 开发中功能 (v0.2.0+)
+## 💡 FZF 集成技巧
+
+[fzf](https://github.com/junegunn/fzf) 是一个强大的命令行模糊查找工具，与 Water-Repo 配合使用效果极佳。以下是一些实用的一行命令：
+
+### 搜索与交互
+
+```bash
+# 搜索并获取包信息
+wt search <pkg> | fzf | xargs -I {} wt info {}
+
+# 搜索并删除包
+wt search <pkg> | fzf | xargs -I {} wt rm {}
+
+# 搜索并下载包
+wt search <pkg> | fzf | xargs -I {} wt install {}
+
+# 搜索并公开分享包
+wt search <pkg> | fzf | xargs -I {} wt public {}
+```
+
+### 文件操作
+
+```bash
+# 选择文件并上传（交互式文件选择）
+wt upload $(fzf)
+```
+
+### 标签管理
+
+```bash
+# 选择标签并列出包
+wt ls $(wt tag ls | fzf)
+
+# 为包添加标签（交互式选择包和标签）
+wt tag $(wt ls | fzf) $(wt tag ls | fzf)
+```
+
+> **提示**：从 [https://github.com/junegunn/fzf](https://github.com/junegunn/fzf) 安装 fzf 以获得增强的交互式工作流。
+
+---
+
+## 🚧 开发中功能 (v0.3.0+)
 
 以下功能正在开发中,将在后续版本中陆续上线,现有配置文件和核心命令保持完全向后兼容。
 
@@ -489,12 +570,11 @@ wt server log
    - 发现的节点自动加入镜像源列表,无需手动配置
    - 支持一键关闭自动发现功能
 
-### 规划中功能
+### 最近完成 (v0.2.0)
 
-1. **`wt public` 一键公开分享**：将指定包公开给整个局域网,任何人无需配置 Token 即可下载
-2. **下载进度显示**：命令行实时显示下载速度和进度条
-3. **断点续传**：支持大文件断点续传,中断后无需重新下载
-4. **`wt config` 配置管理命令**：无需手动编辑 JSON 文件,通过命令行修改配置
+1. ✅ **Tailscale Funnel 集成**：通过 `wt public/private/links` 实现公开包分享
+2. ✅ **服务器配置重载**：通过 `wt reload` 动态更新配置，无需重启
+3. ✅ **增强的帮助系统**：全面的文档覆盖所有命令级别
 
 ---
 

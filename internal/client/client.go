@@ -429,6 +429,85 @@ func ReloadRequest() (err error) {
 	return
 }
 
+func PublicRequest(pkgName string) (err error) {
+	val := url.Values{}
+	val.Set("name", pkgName)
+
+	fmt.Println("send request for public the pkg ->", pkgName)
+
+	var apiRsp *model.APIResponse
+	apiRsp, err = doRequest(http.MethodPost, "/public", val, model.WTWrite, nil)
+	if err != nil {
+		return
+	}
+
+	if apiRsp.Code != http.StatusOK {
+		return errors.New(apiRsp.Error)
+	}
+	data := apiRsp.Data
+	fmt.Println("public link -> ", data)
+
+	return
+}
+
+func printLinks(links []string) {
+	fmt.Println("--------------------- available links ------------------------")
+	for i := range links {
+		fmt.Println(links[i])
+	}
+	fmt.Println("--------------------------------------------------------------")
+}
+
+func LinksRequest() (err error) {
+	val := url.Values{}
+	fmt.Println("send request for exist links")
+
+	var apiRsp *model.APIResponse
+	apiRsp, err = doRequest(http.MethodGet, "/links", val, model.WTRead, nil)
+	if err != nil {
+		return
+	}
+
+	if apiRsp.Code != http.StatusOK {
+		return errors.New(apiRsp.Error)
+	}
+
+	byteData, _ := json.Marshal(apiRsp.Data)
+
+	var links []string
+	err = json.Unmarshal(byteData, &links)
+	if err != nil {
+		return
+	}
+
+	printLinks(links)
+
+	return nil
+}
+
+func PrivateRequest(pkgName string) (err error) {
+	val := url.Values{}
+	fmt.Println("send request for private pkg -> ", pkgName)
+
+	val.Set("name", pkgName)
+	var apiRsp *model.APIResponse
+	apiRsp, err = doRequest(http.MethodPatch, "/private", val, model.WTWrite, nil)
+	if err != nil {
+		return
+	}
+
+	if apiRsp.Code != http.StatusOK {
+		return errors.New(apiRsp.Error)
+	}
+
+	data := apiRsp.Data
+	if msg, ok := data.(string); ok {
+		fmt.Println(msg)
+	}
+
+	return
+}
+
 // doRequest : this function will choose the corect token
 func doRequest(
 	method string,

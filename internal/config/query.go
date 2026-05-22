@@ -29,18 +29,19 @@ func queryHostPort(query model.Query) (server string) {
 // set timeout with query input like "enter the Install timeout for client:"
 // return the timeOut which is time.Duration
 func queryTimeout(query model.Query) (timeOut time.Duration) {
-	timeString := ""
-
-	fmt.Println(query.Head)
-	fmt.Println("example:", query.Example)
-	fmt.Println("default value:", query.Default)
-	fmt.Printf("enter your value[default if blank] ->")
-	scanner.Scan()
-	timeString = strings.TrimSpace(scanner.Text())
-
-	if timeString == "" {
-		timeString = query.Default
-	}
+	// timeString := ""
+	//
+	// fmt.Println(query.Head)
+	// fmt.Println("example:", query.Example)
+	// fmt.Println("default value:", query.Default)
+	// fmt.Printf("enter your value[default if blank] ->")
+	// scanner.Scan()
+	// timeString = strings.TrimSpace(scanner.Text())
+	//
+	// if timeString == "" {
+	// 	timeString = query.Default
+	// }
+	timeString := query.Default
 
 	timeOut, err := time.ParseDuration(timeString)
 	if err != nil {
@@ -49,7 +50,7 @@ func queryTimeout(query model.Query) (timeOut time.Duration) {
 		timeOut = time.Second * 0
 	}
 
-	fmt.Println()
+	// fmt.Println()
 	return
 }
 

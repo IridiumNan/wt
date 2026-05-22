@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	DEBUG   = true
-	VERSION = "0.0.3"
+	DEBUG   = false
+	VERSION = "0.2.1"
 	CMDINX  = 1
 )
 

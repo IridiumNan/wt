@@ -23,6 +23,15 @@ TAG MANAGEMENT:
   wt tag list                   List all tags accessible to current client
   wt clear <tag>                Clear all packages under a tag (v0.2+)
 
+SHARING & ACCESS CONTROL:
+  wt public <name>              Make package publicly accessible via link
+  wt private <name>             Revoke public access for a package
+  wt links                      List all currently public packages
+
+SERVER MANAGEMENT:
+  wt reload                     Reload server configuration from disk
+  wt sync                       Sync local metadata with server
+
 TAG TOKEN MANAGEMENT (Server-side):
   wt server tag <tag> read_token add <token>
   wt server tag <tag> install_token add <token>
@@ -45,3 +54,7 @@ EXAMPLES:
   $ wt mv my-app my-app-renamed
   $ wt tag add frontend
   $ wt tag my-app frontend
+  $ wt public my-app
+  $ wt links
+  $ wt private my-app
+  $ wt reload

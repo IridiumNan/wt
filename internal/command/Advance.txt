@@ -85,7 +85,45 @@ COMMAND DETAILS:
       - Global tokens still take priority (act as super-admin)
       - Requires server restart to take effect
 
-11. CONFIG
+11. PUBLIC SHARING
+    Usage: wt public <package-name>
+    Description: Generate a public shareable link for a package via Tailscale Funnel
+    Permission: Requires Write token for the package's tag
+    Example: wt public my-app
+    Notes:
+      - Creates a temporary public endpoint for downloading the package
+      - Link is managed by Tailscale Funnel service
+      - Useful for sharing with external users without authentication
+
+12. PRIVATE ACCESS
+    Usage: wt private <package-name>
+    Description: Revoke public access for a previously shared package
+    Permission: Requires global Write token
+    Example: wt private my-app
+    Notes:
+      - Removes the package from public listing
+      - Existing links may remain active until expiration
+
+13. LINKS
+    Usage: wt links
+    Description: List all currently public packages and their shareable links
+    Permission: Requires global Read token
+    Example: wt links
+    Notes:
+      - Shows all packages currently exposed via Tailscale Funnel
+      - Useful for auditing public shares
+
+14. RELOAD
+    Usage: wt reload
+    Description: Reload server configuration from disk without restarting
+    Permission: Requires global Write token
+    Example: wt reload
+    Notes:
+      - Applies changes made to server_config.json immediately
+      - No server restart required
+      - Useful for updating tokens or server settings on-the-fly
+
+15. CONFIG
     Client Config:
       wt config show                      # Display current settings
       wt config read_token <token>        # Set read access token
