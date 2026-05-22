@@ -62,6 +62,30 @@ func Usage(command string) {
 		fmt.Println("  wt sync")
 		fmt.Println("  Description: Sync local metadata with server")
 
+	case "tag":
+		fmt.Println("  wt tag <subcommand> [args]")
+		fmt.Println("  Subcommands: add, rm, list, <pkg> <tag>")
+		fmt.Println("  Example: wt tag add stable")
+		fmt.Println("  Example: wt tag my-app stable")
+
+	case "public":
+		fmt.Println("  wt public <package-name>")
+		fmt.Println("  Example: wt public my-app")
+		fmt.Println("  Description: Make package publicly accessible")
+
+	case "private":
+		fmt.Println("  wt private <package-name>")
+		fmt.Println("  Example: wt private my-app")
+		fmt.Println("  Description: Revoke public access for package")
+
+	case "links":
+		fmt.Println("  wt links")
+		fmt.Println("  Description: List all public package links")
+
+	case "reload":
+		fmt.Println("  wt reload")
+		fmt.Println("  Description: Reload server configuration")
+
 	case "help", "--help", "-h":
 		fmt.Println("  wt help")
 		fmt.Println("  Description: Show this help manual")
@@ -77,6 +101,11 @@ func Usage(command string) {
 		fmt.Println("  rm       - Remove a package")
 		fmt.Println("  list     - List packages by tag")
 		fmt.Println("  sync     - Sync metadata with server")
+		fmt.Println("  tag      - Manage tags and package assignments")
+		fmt.Println("  public   - Make package publicly accessible")
+		fmt.Println("  private  - Revoke public access")
+		fmt.Println("  links    - List public package links")
+		fmt.Println("  reload   - Reload server configuration")
 		fmt.Println("  help     - Show help information")
 	}
 

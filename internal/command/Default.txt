@@ -1,5 +1,5 @@
 Water-Repo (wt) - Lightweight Package Repository Manager
-Version: 0.1.2
+Version: 0.2.1
 
 USAGE:
   wt <command> [arguments]
@@ -15,6 +15,10 @@ COMMANDS:
   sync       Synchronize local metadata with server
   tag        Tag management (add/rm/list/change package tag)
   clear      Clear all packages under a tag (DANGEROUS, v0.2+)
+  public     Make a package publicly accessible via shareable link
+  private    Revoke public access for a package
+  links      List all currently public packages
+  reload     Reload server configuration from disk
   config     View or modify client configuration
   help       Show this help message
 
@@ -36,6 +40,8 @@ QUICK START:
   2. Upload package:   wt upload ./my-app.tar.gz my-app
   3. Search package:   wt search my-app
   4. Install package:  wt install my-app
+  5. Share publicly:   wt public my-app
+  6. View links:       wt links
 
 For detailed usage of a specific command, use: wt help <command>
 Example: wt help upload

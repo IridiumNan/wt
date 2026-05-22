@@ -11,7 +11,7 @@ import (
 
 const (
 	DEBUG   = false
-	VERSION = "0.1.3"
+	VERSION = "0.2.1"
 	CMDINX  = 1
 )
 
