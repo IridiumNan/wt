@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/badge/go-1.25.9+-blue.svg)](https://golang.org/)
-[![Version](https://img.shields.io/badge/version-v0.0.3-orange.svg)]()
+[![Version](https://img.shields.io/badge/version-v0.1.2-orange.svg)]()
 
 超轻量级个人/小团队仓库管理工具,基于 Go 开发,纯 CLI 交互(无图形化界面),天生适配服务器环境;CS 架构设计,单二进制文件开箱即用,零依赖零配置,没有任何多余功能。
 
@@ -12,7 +12,7 @@
 
 - **轻量级**：单二进制文件,零依赖
 - **简单易用**：直观的命令行操作
-- **安全可靠**：基于 Token 的权限控制系统
+- **安全可靠**：基于 Token 的权限控制系统,支持标签级细粒度权限
 - **灵活组织**：标签化管理包资源
 - **跨平台支持**：支持 Linux、macOS 和 Windows
 
@@ -25,22 +25,22 @@
 #### Linux
 
 ```bash
-wget https://repo.waterman.xin/apps/water-repo/wt-lastest-linux-amd64
-chmod +x wt-lastest-linux-amd64
-mv wt-lastest-linux-amd64 ~/.local/bin/wt  # 或任何在 PATH 中的目录
+wget https://repo.waterman.xin/apps/water-repo/wt-latest-linux-amd64
+chmod +x wt-latest-linux-amd64
+mv wt-latest-linux-amd64 ~/.local/bin/wt  # 或任何在 PATH 中的目录
 ```
 
 #### macOS (Apple Silicon)
 
 ```bash
-curl -LO https://repo.waterman.xin/apps/water-repo/wt-lastest-darwin-arm64
-chmod +x wt-lastest-darwin-arm64
-mv wt-lastest-darwin-arm64 ~/.local/bin/wt  # 或任何在 PATH 中的目录
+curl -LO https://repo.waterman.xin/apps/water-repo/wt-latest-darwin-arm64
+chmod +x wt-latest-darwin-arm64
+mv wt-latest-darwin-arm64 ~/.local/bin/wt  # 或任何在 PATH 中的目录
 ```
 
 #### Windows
 
-从 [wt-lastest-windows-amd64.exe](https://repo.waterman.xin/apps/water-repo/wt-lastest-windows-amd64.exe) 下载
+从 [wt-latest-windows-amd64.exe](https://repo.waterman.xin/apps/water-repo/wt-latest-windows-amd64.exe) 下载
 
 > **注意**：将下载的文件重命名为 `wt.exe` 并添加到 PATH 环境变量中。
 
@@ -227,13 +227,18 @@ go build -o wt ./cmd/wt
 
 ## 🔐 权限管理
 
-采用极简的 **三级 Token 权限体系**,无需用户注册登录,通过配置文件中的 Token 验证操作权限,未配置对应有效 Token 会直接拒绝操作。
+采用 **两级 Token 权限体系** —— 全局 Token 作为超管兜底,标签级 Token 提供细粒度权限控制。无需用户注册登录。
 
 | 权限等级 | 可执行操作 | 适用场景 |
 |---------|-----------|---------|
 | Read | `search`、`list`、`info` | 仅允许查看仓库内容 |
 | Install | `install` | 允许下载使用仓库中的包 |
-| Write | `upload`、`mv`、`rm` | 允许管理和修改仓库内容 |
+| Write | `upload`、`mv`、`rm`、`tag`、`sync` | 允许管理和修改仓库内容 |
+
+**权限校验顺序**：全局 Token → 标签 Token → 拒绝
+
+- 全局 Token：对所有标签拥有对应级别的权限
+- 标签 Token：仅对特定标签拥有权限
 
 ---
 
@@ -252,9 +257,19 @@ go build -o wt ./cmd/wt
 |---------|----------|------|
 | 列出指定标签的所有包 | `wt list <标签名>` | 展示归属该标签的全部包 |
 | 修改包的标签 | `wt tag <包名> <目标标签>` | 将指定包移动到目标标签下 |
-| 新增自定义标签 | `wt tag add <标签名>` | 创建新的分类标签 |
+| 新增自定义标签 | `wt tag add <标签名>` | 创建新的分类标签（自动继承全局 Token） |
 | 删除自定义标签 | `wt tag rm <标签名>` | 删除指定标签；原归属该标签的所有包会自动回退到 `temp` 标签 |
-| 批量清理标签下的所有包 | `wt clear <标签名>` | **高危操作！** 永久删除该标签下的所有包,不可恢复 |
+| 列出可见标签 | `wt tag list` | 列出当前客户端有权访问的所有标签 |
+
+### 标签级 Token 管理（服务端）
+
+| 操作场景 | 命令示例 | 说明 |
+|---------|----------|------|
+| 为标签添加读权限 | `wt server tag <标签> read_token add <token>` | 授予对特定标签的读取权限 |
+| 为标签添加下载权限 | `wt server tag <标签> install_token add <token>` | 授予对特定标签的下载权限 |
+| 为标签添加写权限 | `wt server tag <标签> write_token add <token>` | 授予对特定标签的写入权限 |
+
+> **注意**：标签 Token 变更后需重启服务器才能生效。
 
 ---
 
@@ -295,7 +310,24 @@ go build -o wt ./cmd/wt
     ],
     "write_token": [
         "管理员写入Token1"
-    ]
+    ],
+    "tag_token": {
+        "temp": {
+            "read_token": [],
+            "install_token": [],
+            "write_token": []
+        },
+        "static": {
+            "read_token": [],
+            "install_token": [],
+            "write_token": []
+        },
+        "frontend": {
+            "read_token": ["前端读取Token"],
+            "install_token": [],
+            "write_token": ["前端写入Token"]
+        }
+    }
 }
 ```
 
@@ -360,6 +392,22 @@ wt list temp
 wt sync
 ```
 
+### 标签操作
+
+```bash
+# 创建新标签
+wt tag add frontend
+
+# 将包移动到标签
+wt tag my-app frontend
+
+# 列出所有可见标签
+wt tag list
+
+# 为标签添加 Token
+wt server tag frontend write_token add my-team-token
+```
+
 ---
 
 ## 🛠️ 进阶用法
@@ -398,6 +446,10 @@ wt server config install_timeout 3h
 wt server config read_token add <新令牌>
 wt server config install_token add <新令牌>
 wt server config write_token add <新令牌>
+
+# 标签级 Token 管理
+wt server tag frontend read_token add <新令牌>
+wt server tag backend write_token add <新令牌>
 ```
 
 > **注意**：
@@ -415,17 +467,15 @@ wt server log
 
 ---
 
-## 🚧 开发中功能 (v0.1.1+)
+## 🚧 开发中功能 (v0.2.0+)
 
 以下功能正在开发中,将在后续版本中陆续上线,现有配置文件和核心命令保持完全向后兼容。
 
 ### 核心待实现（下一版本）
 
-1. **按标签的细粒度权限控制**
-   - 基于现有标签系统扩展,无需引入复杂的角色和用户体系
-   - 支持为每个标签单独配置 Read/Install/Write 权限 Token
-   - 标签权限优先级高于全局权限,实现"不同人管理不同分类的包"
-   - 示例：前端组仅拥有 `frontend` 标签的写入权限,后端组仅拥有 `backend` 标签的写入权限
+1. **批量操作**
+   - `wt clear <tag>`：清空标签下所有包（需确认）
+   - `wt install-tag <tag>`：批量下载标签下所有包
 
 2. **动态镜像源管理**
    - 支持添加多个远程 wt 服务端作为镜像源
@@ -441,11 +491,10 @@ wt server log
 
 ### 规划中功能
 
-1. **`wt install-tag` 批量下载**：一条命令下载指定标签下的所有包
-2. **`wt public` 一键公开分享**：将指定包公开给整个局域网,任何人无需配置 Token 即可下载
-3. **下载进度显示**：命令行实时显示下载速度和进度条
-4. **断点续传**：支持大文件断点续传,中断后无需重新下载
-5. **`wt config` 配置管理命令**：无需手动编辑 JSON 文件,通过命令行修改配置
+1. **`wt public` 一键公开分享**：将指定包公开给整个局域网,任何人无需配置 Token 即可下载
+2. **下载进度显示**：命令行实时显示下载速度和进度条
+3. **断点续传**：支持大文件断点续传,中断后无需重新下载
+4. **`wt config` 配置管理命令**：无需手动编辑 JSON 文件,通过命令行修改配置
 
 ---
 

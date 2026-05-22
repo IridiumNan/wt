@@ -16,6 +16,18 @@ UPLOAD & MANAGE:
   wt mv <old> <new>             Rename a package
   wt rm <name>                  Delete a package
 
+TAG MANAGEMENT:
+  wt tag add <name>             Create a new custom tag
+  wt tag rm <name>              Remove a custom tag (packages revert to temp)
+  wt tag <pkg> <tag>            Change package tag
+  wt tag list                   List all tags accessible to current client
+  wt clear <tag>                Clear all packages under a tag (v0.2+)
+
+TAG TOKEN MANAGEMENT (Server-side):
+  wt server tag <tag> read_token add <token>
+  wt server tag <tag> install_token add <token>
+  wt server tag <tag> write_token add <token>
+
 CONFIGURATION:
   wt config show                Display current config
   wt config <key> <value>       Change configuration (e.g., tokens)
@@ -31,3 +43,5 @@ EXAMPLES:
   $ wt search my-app
   $ wt install my-app
   $ wt mv my-app my-app-renamed
+  $ wt tag add frontend
+  $ wt tag my-app frontend

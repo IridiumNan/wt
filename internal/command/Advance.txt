@@ -53,7 +53,39 @@ COMMAND DETAILS:
    Description: Force synchronization of local metadata with server state
    Use case: After manual file operations or recovery scenarios
    
-9. CONFIG
+9. TAG MANAGEMENT
+   Usage: wt tag <subcommand> [arguments]
+   Description: Manage custom tags and package tag assignments
+   Subcommands:
+     add <tag-name>        Create a new custom tag (auto-inherits global tokens)
+     rm <tag-name>         Remove a custom tag (packages revert to temp)
+     list                  List all tags accessible to current client
+     <pkg> <tag>           Move package to a different tag
+   Examples:
+     wt tag add frontend          # Create a new tag
+     wt tag rm frontend           # Remove the tag
+     wt tag list                  # List accessible tags
+     wt tag my-app frontend       # Move my-app to frontend tag
+   Permission:
+     - add/rm: Requires global Write token
+     - <pkg> <tag>: Requires Write token for both old and new tags
+     - list: Returns tags visible to current client's Read token
+
+10. TAG TOKEN MANAGEMENT (Server-side)
+    Usage: wt server tag <tag-name> <token-type> add <token>
+    Description: Add fine-grained tokens for a specific tag
+    Token types: read_token, install_token, write_token
+    Permission: Requires global Write token
+    Examples:
+      wt server tag frontend read_token add my-read-token
+      wt server tag backend write_token add my-write-token
+    Notes:
+      - Tag tokens extend the global token system
+      - A tag token grants permission only for that specific tag
+      - Global tokens still take priority (act as super-admin)
+      - Requires server restart to take effect
+
+11. CONFIG
     Client Config:
       wt config show                      # Display current settings
       wt config read_token <token>        # Set read access token
