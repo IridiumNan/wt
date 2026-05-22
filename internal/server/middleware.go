@@ -173,7 +173,6 @@ func exposeSinglePackage(pkgName string) (link string, err error) {
 	pkgPath, _ = filepath.Abs(pkgPath)
 
 	softLinkPath := filepath.Join(linkDir, pkgName)
-	softLinkPath, _ = filepath.Abs(softLinkPath)
 
 	err = os.Symlink(pkgPath, softLinkPath)
 	link = getPackageLink(pkgName)
@@ -188,6 +187,25 @@ func exposeSinglePackage(pkgName string) (link string, err error) {
 	}
 
 	addNewLinkIfNotInPool(link)
+
+	return
+}
+
+func privateSinglePackage(pkgName string) (err error) {
+	softLinkPath := filepath.Join(linkDir, pkgName)
+	err = os.Remove(softLinkPath)
+	if err != nil && os.IsNotExist(err) {
+		err = nil
+		return
+	}
+
+	if err != nil {
+		return err
+	}
+
+	pkgLinkPool = slices.DeleteFunc(pkgLinkPool, func(link string) bool {
+		return strings.Contains(link, pkgName)
+	})
 
 	return
 }

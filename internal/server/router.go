@@ -22,6 +22,7 @@ func NewRouter() *http.ServeMux {
 	mux.HandleFunc("/reload", reloadHandler)
 	mux.HandleFunc("/public", publicHandler)
 	mux.HandleFunc("/links", linksHandler)
+	mux.HandleFunc("/private", privateHandler)
 
 	return &mux
 }

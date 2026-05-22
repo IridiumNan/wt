@@ -659,6 +659,35 @@ func linksHandler(w http.ResponseWriter, r *http.Request) {
 		http.StatusOK,
 		model.SuccessfulResponse(pkgLinkPool, ""),
 	)
+}
 
+func privateHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	data := r.URL.Query()
+	pkgName := data.Get("name")
+
+	if !TokenOk(w, r, model.WTWrite, "") {
+		return
+	}
+
+	err := privateSinglePackage(pkgName)
+	if err != nil {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusInternalServerError,
+			model.InternalErrorResponse(err.Error()),
+		)
+		return
+	}
+
+	successMsg := fmt.Sprintf(
+		"private the pkg -> %s", pkgName,
+	)
+	httphelper.SendJSONResponse(
+		w,
+		http.StatusOK,
+		model.SuccessfulResponse(successMsg, ""),
+	)
 	return
 }

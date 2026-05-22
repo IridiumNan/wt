@@ -472,13 +472,40 @@ func LinksRequest() (err error) {
 		return errors.New(apiRsp.Error)
 	}
 
-	data := apiRsp.Data
-	if links, ok := data.([]string); !ok {
-		printLinks(links)
+	byteData, _ := json.Marshal(apiRsp.Data)
+
+	var links []string
+	err = json.Unmarshal(byteData, &links)
+	if err != nil {
 		return
 	}
 
-	return errors.New("can't read links")
+	printLinks(links)
+
+	return nil
+}
+
+func PrivateRequest(pkgName string) (err error) {
+	val := url.Values{}
+	fmt.Println("send request for private pkg -> ", pkgName)
+
+	val.Set("name", pkgName)
+	var apiRsp *model.APIResponse
+	apiRsp, err = doRequest(http.MethodPatch, "/private", val, model.WTWrite, nil)
+	if err != nil {
+		return
+	}
+
+	if apiRsp.Code != http.StatusOK {
+		return errors.New(apiRsp.Error)
+	}
+
+	data := apiRsp.Data
+	if msg, ok := data.(string); ok {
+		fmt.Println(msg)
+	}
+
+	return
 }
 
 // doRequest : this function will choose the corect token
