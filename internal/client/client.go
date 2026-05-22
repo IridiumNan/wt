@@ -29,7 +29,6 @@ func SearchRequest(pattern string) (err error) {
 
 	val := url.Values{}
 	val.Set("name", pattern)
-	val.Set("tag", "")
 	apiRsp, err := doRequest(http.MethodGet, "/search", val, model.WTRead, nil)
 	if err != nil {
 		return
@@ -259,7 +258,7 @@ func MvRequest(oldName string, newName string) (err error) {
 		return fmt.Errorf("missing old name or new name")
 	}
 
-	fmt.Printf("send request for mv %s to %s (server : %s)", oldName, newName, config.GetServerAddr(model.WTServer))
+	fmt.Printf("send request for mv %s to %s (server : %s)", oldName, newName, config.GetServerAddr(model.WTClient))
 	val := url.Values{}
 	val.Set("old_name", oldName)
 	val.Set("new_name", newName)
@@ -319,6 +318,118 @@ func RmRequest(pkgName string) (err error) {
 	return
 }
 
+func TagListRequest() (err error) {
+	val := url.Values{}
+	apiRsp, err := doRequest(http.MethodGet, "/tag/list", val, model.WTRead, nil)
+	if err != nil {
+		return
+	}
+
+	jsonData, _ := json.Marshal(apiRsp.Data)
+
+	var tags []string
+	// return data : tags []string
+	err = json.Unmarshal(jsonData, &tags)
+	if err != nil {
+		return
+	}
+
+	for i := range tags {
+		fmt.Println(tags[i])
+	}
+
+	return
+}
+
+func AddTagRequest(tagName string) (err error) {
+	val := url.Values{}
+	val.Set("tag", tagName)
+
+	fmt.Println("send request for add new tag:", tagName)
+
+	var apiRsp *model.APIResponse
+	apiRsp, err = doRequest(http.MethodPost, "/tag/add", val, model.WTWrite, nil)
+	if err != nil {
+		return
+	}
+
+	jsonData, _ := json.Marshal(apiRsp.Data)
+
+	var res string
+
+	err = json.Unmarshal(jsonData, &res)
+
+	fmt.Println(res)
+
+	return
+}
+
+func UpdateTagRequest(pkgName string, newTag string) (err error) {
+	val := url.Values{}
+	val.Set("name", pkgName)
+	val.Set("new_tag", newTag)
+
+	fmt.Printf("send request for update the package : %s to new tag : %s (server : %s)", pkgName, newTag, config.GetServerAddr(model.WTClient))
+
+	var apiRsp *model.APIResponse
+	apiRsp, err = doRequest(http.MethodPut, "/tag/update", val, model.WTWrite, nil)
+	if err != nil {
+		return
+	}
+
+	if apiRsp.Code != http.StatusOK {
+		return errors.New(apiRsp.Error)
+	}
+	data := apiRsp.Data
+	fmt.Println(data)
+
+	return
+}
+
+func TagRmRequest(tagName string) (err error) {
+	val := url.Values{}
+	val.Set("tag", tagName)
+
+	fmt.Println("send request for rm the tag ", tagName)
+
+	var apiRsp *model.APIResponse
+	apiRsp, err = doRequest(http.MethodPost, "/tag/rm", val, model.WTWrite, nil)
+	if err != nil {
+		return
+	}
+
+	if apiRsp.Code != http.StatusOK {
+		return errors.New(apiRsp.Error)
+	}
+
+	data := apiRsp.Data
+	fmt.Println(data)
+
+	return
+}
+
+func ReloadRequest() (err error) {
+	val := url.Values{}
+
+	fmt.Println("send request for reload the server config")
+	var apiRsp *model.APIResponse
+	apiRsp, err = doRequest(http.MethodPost, "/reload", val, model.WTWrite, nil)
+	if err != nil {
+		return
+	}
+
+	if apiRsp.Code != http.StatusOK {
+		return errors.New(apiRsp.Error)
+	}
+
+	data := apiRsp.Data
+
+	fmt.Println(data)
+
+	return
+}
+
+// doRequest : this function will choose the corect token
 func doRequest(
 	method string,
 	endpoint string,

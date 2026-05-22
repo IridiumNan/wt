@@ -58,30 +58,6 @@ func GetPackage(pkgName string) (pkg *model.Package, err error) {
 	return
 }
 
-// UpdateTag : update the tag
-func UpdateTag(pkgName string, newTag string) (err error) {
-	MapLock.Lock()
-	defer MapLock.Unlock()
-
-	pkg, ok := metaData.DataMap[pkgName]
-	if !ok {
-		err = errors.New("pkg not found")
-		return
-	}
-
-	oldTag := pkg.Tag
-	oldNameList := metaData.TagMap[oldTag]
-	newNameList := removePkgInNameList(oldNameList, pkgName)
-
-	metaData.TagMap[oldTag] = newNameList
-	metaData.TagMap[newTag] = append(metaData.TagMap[newTag], pkgName)
-
-	pkg.Tag = newTag
-
-	err = syncMetaDataToFile(metaData)
-	return
-}
-
 // AddPackage : add single package
 func AddPackage(info fs.FileInfo) {
 	MapLock.Lock()
@@ -103,7 +79,7 @@ func AddPackage(info fs.FileInfo) {
 	metaData.DataMap[info.Name()] = getDefaultPackage(info)
 	metaData.TagMap[config.DefaultTagTemp] = append(metaData.TagMap[config.DefaultTagTemp], info.Name())
 
-	err := syncMetaDataToFile(metaData)
+	err := SyncMetaDataToFile()
 	if err != nil {
 		panic(err)
 	}
@@ -134,7 +110,7 @@ func RenamePackage(oldName string, newName string) (err error) {
 
 	delete(metaData.DataMap, oldName)
 
-	err = syncMetaDataToFile(metaData)
+	err = SyncMetaDataToFile()
 	return
 }
 
@@ -164,7 +140,7 @@ func DeletePackageByName(pkgName string) (err error) {
 
 	delete(metaData.DataMap, pkgName)
 
-	err = syncMetaDataToFile(metaData)
+	err = SyncMetaDataToFile()
 	if err != nil {
 		panic(err)
 	}
@@ -211,14 +187,58 @@ func GetPackageTag(pkgName string) (tag string, err error) {
 
 // AddTag : add a single tag without token config
 func AddTag(tagName string) (err error) {
+	MapLock.Lock()
+	defer MapLock.Unlock()
 	if _, ok := metaData.TagMap[tagName]; ok {
 		return errors.New("tag " + tagName + " has been exist")
 	}
-	metaData.TagMap[tagName] = make([]string, 1)
+	metaData.TagMap[tagName] = make([]string, 0)
+	config.AddTagTokenList(tagName)
 	return nil
+}
+
+// UpdateTag : update the tag
+func UpdateTag(pkgName string, newTag string) (err error) {
+	MapLock.Lock()
+	defer MapLock.Unlock()
+
+	pkg, ok := metaData.DataMap[pkgName]
+	if !ok {
+		err = errors.New("pkg not found")
+		return
+	}
+
+	oldTag := pkg.Tag
+	oldNameList := metaData.TagMap[oldTag]
+	newNameList := removePkgInNameList(oldNameList, pkgName)
+
+	metaData.TagMap[oldTag] = newNameList
+	metaData.TagMap[newTag] = append(metaData.TagMap[newTag], pkgName)
+
+	pkg.Tag = newTag
+
+	err = SyncMetaDataToFile()
+	return
 }
 
 // RemoveTag : if package exist then retag them as temp
 func RemoveTag(tagName string) (err error) {
+	MapLock.Lock()
+	defer MapLock.Unlock()
+
+	// handle the exist pkgs
+	pkgNameList, ok := metaData.TagMap[tagName]
+	if !ok {
+		return errors.New("this tag is not exist")
+	}
+
+	for i := range pkgNameList {
+		metaData.DataMap[pkgNameList[i]].Tag = config.DefaultTagTemp
+		metaData.TagMap[config.DefaultTagTemp] = append(metaData.TagMap[config.DefaultTagTemp], pkgNameList[i])
+	}
+	// delete the tag
+	config.DeleteTagTokenList(tagName)
+	delete(metaData.TagMap, tagName)
+
 	return
 }

@@ -8,15 +8,6 @@ import (
 	"runtime"
 )
 
-const (
-	DefaultTagTemp   = "temp"
-	DefaultTagStatic = "static"
-	ClientConfigPath = "/.config/water-repo/client_config.json"
-	ServerConfigPath = "/.config/water-repo/server_config.json"
-	metaDataFileName = "meta_data.json"
-	LogFile          = "log.txt"
-)
-
 var (
 	DataDir      = "."
 	LogDir       = GetLogDir()

@@ -437,3 +437,162 @@ func tagListHandler(w http.ResponseWriter, r *http.Request) {
 		model.SuccessfulResponse(tags, msg),
 	)
 }
+
+func addTagHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	data := r.URL.Query()
+	tagName := data.Get("tag")
+
+	if !TokenOk(w, r, model.WTWrite, "") {
+		return
+	}
+
+	config.AddTagTokenList(tagName)
+
+	slog.Info("add a new tag", "tagName", tagName)
+
+	httphelper.SendJSONResponse(
+		w,
+		http.StatusOK,
+		model.SuccessfulResponse("add the tag:"+tagName+"successfully", ""),
+	)
+}
+
+func tagUpdateHandler(w http.ResponseWriter, r *http.Request) {
+	var err error
+	defer r.Body.Close()
+	data := r.URL.Query()
+	newTag := data.Get("new_tag")
+	pkgName := data.Get("name")
+
+	slog.Debug("update request check", "pkg_name", pkgName, "new_tag", newTag)
+
+	var pkg *model.Package
+	pkg, err = store.GetPackage(pkgName)
+
+	slog.Debug("check pkg", "pkgInfo", pkg.Name)
+	if err != nil {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusNotFound,
+			model.NotFoundResponse("package "+pkgName+" not found"),
+		)
+		return
+	}
+	oldTag := pkg.Tag
+
+	if !TokenOk(w, r, model.WTWrite, oldTag) || !TokenOk(w, r, model.WTWrite, newTag) {
+		return
+	}
+
+	err = store.UpdateTag(pkgName, newTag)
+	if err != nil {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusInternalServerError,
+			model.InternalErrorResponse("fail to update the tag:"+err.Error()),
+		)
+		return
+	}
+
+	httphelper.SendJSONResponse(
+		w,
+		http.StatusOK,
+		model.SuccessfulResponse("update the package "+pkgName+" from old tag "+oldTag+" to new tag "+newTag+" successfully", ""),
+	)
+}
+
+func tagRmHandler(w http.ResponseWriter, r *http.Request) {
+	var err error
+	defer r.Body.Close()
+	data := r.URL.Query()
+	tag := data.Get("tag")
+
+	slog.Debug("tag rm request check", "tag", tag)
+
+	if !TokenOk(w, r, model.WTWrite, "") {
+		return
+	}
+	tagList := config.GetTagList()
+
+	if !slices.Contains(tagList, tag) {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusNotFound,
+			model.NotFoundResponse("tag "+tag+" not found"),
+		)
+		return
+
+	}
+
+	pkgList := store.ListPackagesByTag(tag)
+
+	err = store.RemoveTag(tag)
+	if err != nil {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusInternalServerError,
+			model.InternalErrorResponse("error when remove the tag: "+err.Error()),
+		)
+		return
+	}
+
+	err = store.SyncMetaDataToFile()
+	if err != nil {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusInternalServerError,
+			model.InternalErrorResponse("error when sync the data to disk file"+err.Error()),
+		)
+		return
+	}
+
+	config.DeleteTagTokenList(tag)
+
+	movedPackages := ""
+	for i := range pkgList {
+		movedPackages += pkgList[i] + "\n"
+	}
+
+	successMsg := fmt.Sprintf(
+		"remove the tag %s success and packages below has been retaged as temp:\n%v",
+		tag, movedPackages,
+	)
+	httphelper.SendJSONResponse(
+		w,
+		http.StatusOK,
+		model.SuccessfulResponse(successMsg, ""),
+	)
+}
+
+// reload the server config file from disk which require the admin write token
+func reloadHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	if !TokenOk(w, r, model.WTWrite, "") {
+		return
+	}
+
+	slog.Debug("reload server config from disk", "func", "reloadHandler")
+
+	err := config.InitServerConfig()
+	if err != nil {
+		httphelper.SendJSONResponse(
+			w,
+			http.StatusInternalServerError,
+			model.InternalErrorResponse("error when reload the server config -> "+err.Error()),
+		)
+		return
+	}
+
+	serverConfigPath, _ := config.GetServerConfigPath()
+	data := fmt.Sprintf(
+		"reload server config file from %s success",
+		serverConfigPath,
+	)
+	httphelper.SendJSONResponse(
+		w,
+		http.StatusOK,
+		model.SuccessfulResponse(data, ""),
+	)
+}

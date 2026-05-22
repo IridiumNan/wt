@@ -29,7 +29,10 @@ func queryServerConfig() (serverConfig *model.ServerConfig) {
 		ReadToken:    queryServerToken(querypresets.ServerReadTokenQuery),
 		InstallToken: queryServerToken(querypresets.ServerInstallTokenQuery),
 		WriteToken:   queryServerToken(querypresets.ServerWriteTokenQuery),
+		TagTokenMap:  make(map[string]model.TagAuthTokens),
 	}
+	serverConfig.AddTagTokens(DefaultTagStatic, "", "", "")
+	serverConfig.AddTagTokens(DefaultTagTemp, "", "", "")
 
 	return
 }
@@ -144,17 +147,17 @@ func AddToken(token string, wtMethod model.WTMethod) (err error) {
 func AlterServerConfig(object string, operation string, value string) (err error) {
 	if operation == "add" {
 		switch object {
-		case "read_token":
+		case ReadTokenJSONKey:
 			err = AddToken(value, model.WTRead)
 			if err == nil {
 				fmt.Println("add read_token :", value)
 			}
-		case "install_token":
+		case InstallTokenJSONKey:
 			err = AddToken(value, model.WTInstall)
 			if err == nil {
 				fmt.Println("add install_token :", value)
 			}
-		case "write_token":
+		case WriteTokenJSONKey:
 			err = AddToken(value, model.WTWrite)
 			if err == nil {
 				fmt.Println("add write_token :", value)
@@ -163,4 +166,16 @@ func AlterServerConfig(object string, operation string, value string) (err error
 	}
 
 	return
+}
+
+// AddTagToken : add new tag token to server config
+func AddTagToken(tag string, token string, wtMethod model.WTMethod) {
+	switch wtMethod {
+	case model.WTRead:
+		serverConfig.AddTagTokens(tag, token, "", "")
+	case model.WTInstall:
+		serverConfig.AddTagTokens(tag, "", token, "")
+	case model.WTWrite:
+		serverConfig.AddTagTokens(tag, "", "", token)
+	}
 }
