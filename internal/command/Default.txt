@@ -1,5 +1,5 @@
 Water-Repo (wt) - Lightweight Package Repository Manager
-Version: 0.0.3
+Version: 0.1.2
 
 USAGE:
   wt <command> [arguments]
@@ -13,6 +13,8 @@ COMMANDS:
   rm         Remove a package from the repository
   ls         List packages (optionally filtered by tag)
   sync       Synchronize local metadata with server
+  tag        Tag management (add/rm/list/change package tag)
+  clear      Clear all packages under a tag (DANGEROUS, v0.2+)
   config     View or modify client configuration
   help       Show this help message
 
@@ -23,6 +25,11 @@ SERVER OPTIONS:
   -d, dir <path>       Initialize data directory (Default: current directory)
   -c, config show      Display server configuration
   -c, config <key> <value>  Modify server configuration
+
+SERVER TAG TOKEN MANAGEMENT:
+  wt server tag <tag> read_token add <token>
+  wt server tag <tag> install_token add <token>
+  wt server tag <tag> write_token add <token>
 
 QUICK START:
   1. Start server:     wt server

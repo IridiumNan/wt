@@ -8,7 +8,7 @@ A super lightweight personal/small-team repository management tool, built with G
 
 - **Lightweight**: Single binary file, zero dependencies
 - **Simple**: Easy-to-use CLI commands
-- **Secure**: Token-based permission system
+- **Secure**: Token-based permission system with tag-level fine-grained access control
 - **Flexible**: Tag-based package organization
 - **Cross-platform**: Works on Linux, macOS, and Windows
 
@@ -21,22 +21,22 @@ A super lightweight personal/small-team repository management tool, built with G
 #### Linux
 
 ```bash
-wget https://repo.waterman.xin/apps/water-repo/wt-v0.0.3-linux-amd64
-chmod +x wt-v0.0.3-linux-amd64
-mv wt-v0.0.3-linux-amd64 ~/.local/bin/wt  # or any directory in your PATH
+wget https://repo.waterman.xin/apps/water-repo/wt-latest-linux-amd64
+chmod +x wt-latest-linux-amd64
+mv wt-latest-linux-amd64 ~/.local/bin/wt  # or any directory in your PATH
 ```
 
 #### macOS (Apple Silicon)
 
 ```bash
-curl -LO https://repo.waterman.xin/apps/water-repo/wt-v0.0.3-darwin-arm64
-chmod +x wt-v0.0.3-darwin-arm64
-mv wt-v0.0.3-darwin-arm64 ~/.local/bin/wt  # or any directory in your PATH
+curl -LO https://repo.waterman.xin/apps/water-repo/wt-latest-darwin-arm64
+chmod +x wt-latest-darwin-arm64
+mv wt-latest-darwin-arm64 ~/.local/bin/wt  # or any directory in your PATH
 ```
 
 #### Windows
 
-Download from [wt-v0.0.3-windows-amd64.exe](https://repo.waterman.xin/apps/water-repo/wt-v0.0.3-windows-amd64.exe)
+Download from [wt-latest-windows-amd64.exe](https://repo.waterman.xin/apps/water-repo/wt-latest-windows-amd64.exe)
 
 > **Note**: Rename the downloaded file to `wt.exe` and add it to your PATH.
 
@@ -223,13 +223,18 @@ go build -o wt ./cmd/wt
 
 ## 🔐 Permission System
 
-Uses a simple **three-level Token permission system**. No user registration/login required. Operations are validated through tokens in the configuration file. Operations without valid tokens will be rejected.
+Uses a **two-tier Token permission system** — global tokens act as super-admin fallback, and tag-level tokens provide fine-grained access control. No user registration/login required.
 
 | Permission Level | Allowed Operations | Use Case |
 |------------------|-------------------|----------|
 | Read | `search`, `list`, `info` | View repository content only |
 | Install | `install` | Download packages from repository |
-| Write | `upload`, `mv`, `rm` | Manage and modify repository content |
+| Write | `upload`, `mv`, `rm`, `tag`, `sync` | Manage and modify repository content |
+
+**Permission Check Order**: Global token → Tag token → Deny
+
+- Global tokens: Grant access to ALL tags for their permission level
+- Tag tokens: Grant access only to the specific tag
 
 ---
 
@@ -248,9 +253,19 @@ System has two built-in, non-deletable tags:
 |-----------|----------------|-------------|
 | List packages by tag | `wt list <tag-name>` | Show all packages under a specific tag |
 | Change package tag | `wt tag <package-name> <target-tag>` | Move package to a different tag |
-| Add custom tag | `wt tag add <tag-name>` | Create a new custom tag |
+| Add custom tag | `wt tag add <tag-name>` | Create a new custom tag (auto-inherits global tokens) |
 | Remove custom tag | `wt tag rm <tag-name>` | Delete a tag; packages revert to `temp` tag |
-| Clear all packages in tag | `wt clear <tag-name>` | **Dangerous!** Permanently delete all packages under this tag |
+| List accessible tags | `wt tag list` | List all tags accessible to current client |
+
+### Tag-Level Token Management (Server-side)
+
+| Operation | Command Example | Description |
+|-----------|----------------|-------------|
+| Add read token to tag | `wt server tag <tag> read_token add <token>` | Grant read access to a specific tag |
+| Add install token to tag | `wt server tag <tag> install_token add <token>` | Grant install access to a specific tag |
+| Add write token to tag | `wt server tag <tag> write_token add <token>` | Grant write access to a specific tag |
+
+> **Note**: Tag token changes require a server restart to take effect.
 
 ---
 
@@ -291,7 +306,24 @@ Path: `~/.config/water-repo/server_config.json`
     ],
     "write_token": [
         "admin-write-token1"
-    ]
+    ],
+    "tag_token": {
+        "temp": {
+            "read_token": [],
+            "install_token": [],
+            "write_token": []
+        },
+        "static": {
+            "read_token": [],
+            "install_token": [],
+            "write_token": []
+        },
+        "frontend": {
+            "read_token": ["frontend-read-token"],
+            "install_token": [],
+            "write_token": ["frontend-write-token"]
+        }
+    }
 }
 ```
 
@@ -356,6 +388,22 @@ wt list temp
 wt sync
 ```
 
+### Tag Operations
+
+```bash
+# Create a new tag
+wt tag add frontend
+
+# Move a package to a tag
+wt tag my-app frontend
+
+# List all accessible tags
+wt tag list
+
+# Add tag-level token
+wt server tag frontend write_token add my-team-token
+```
+
 ---
 
 ## 🛠️ Advanced Usage
@@ -394,6 +442,10 @@ wt server config install_timeout 3h
 wt server config read_token add <new-token>
 wt server config install_token add <new-token>
 wt server config write_token add <new-token>
+
+# Tag-level token management
+wt server tag frontend read_token add <new-token>
+wt server tag backend write_token add <new-token>
 ```
 
 > **Note**:
@@ -411,17 +463,15 @@ wt server log
 
 ---
 
-## 🚧 Planned Features (v0.1.1+)
+## 🚧 Planned Features (v0.2.0+)
 
 The following features are under development and will be released in future versions. Existing configuration files and core commands will remain fully backward compatible.
 
 ### Core Features (Next Version)
 
-1. **Fine-grained Permission Control by Tags**
-   - Extend existing tag system without introducing complex role/user systems
-   - Support configuring Read/Install/Write permissions for each tag separately
-   - Tag permissions take priority over global permissions
-   - Example: Frontend team only has write access to `frontend` tag, backend team only has write access to `backend` tag
+1. **Batch Operations**
+   - `wt clear <tag>`: Clear all packages under a tag (with confirmation)
+   - `wt install-tag <tag>`: Batch download all packages under a tag
 
 2. **Dynamic Mirror Source Management**
    - Support adding multiple remote wt servers as mirror sources
@@ -437,11 +487,10 @@ The following features are under development and will be released in future vers
 
 ### Planned Features
 
-1. **`wt install-tag` Batch Download**: Download all packages under a specified tag with one command
-2. **`wt public` One-click Public Sharing**: Make specified package publicly available to entire LAN, anyone can download without Token configuration
-3. **Download Progress Display**: Real-time download speed and progress bar in command line
-4. **Resume Broken Downloads**: Support resuming large file downloads, no need to restart after interruption
-5. **`wt config` Configuration Management Command**: Modify configuration via command line without manually editing JSON files
+1. **`wt public` One-click Public Sharing**: Make specified package publicly available to entire LAN, anyone can download without Token configuration
+2. **Download Progress Display**: Real-time download speed and progress bar in command line
+3. **Resume Broken Downloads**: Support resuming large file downloads, no need to restart after interruption
+4. **`wt config` Configuration Management Command**: Modify configuration via command line without manually editing JSON files
 
 ---
 
