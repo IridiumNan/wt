@@ -11,8 +11,8 @@ var ClientHostPortQuery = model.Query{
 
 var ClientReadTimeoutQuery = model.Query{
 	Head:    ">>set the read time out for client<<",
-	Example: "20s",
-	Default: "20s",
+	Example: "3h",
+	Default: "3h",
 }
 
 var ClientInstallTimeoutQuery = model.Query{

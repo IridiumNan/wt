@@ -12,8 +12,8 @@ var ServerHostPortQuery = model.Query{
 
 var ServerReadTimeoutQuery = model.Query{
 	Head:    ">>set the read timeout for server<<",
-	Example: "20s",
-	Default: "20s",
+	Example: "3h",
+	Default: "3h",
 }
 
 var ServerInstallTimeoutQuety = model.Query{
