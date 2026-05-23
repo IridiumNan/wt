@@ -111,17 +111,23 @@ func TokenOk(w http.ResponseWriter, r *http.Request, wtMethod model.WTMethod, ta
 
 func getLinkPrefix() (baseLink *url.URL, err error) {
 	slog.Debug("Getting Tailscale link prefix", "command", "tailscale status")
-	cmd := exec.Command("tailscale", "status")
+	cmd := exec.Command("tailscale", "dns", "status")
 
-	var out []byte
-	out, err = cmd.Output()
+	lines, err := cmd.Output()
 	if err != nil {
-		slog.Error("Failed to get Tailscale status", "error", err.Error())
 		return
 	}
 
-	strOut := string(out)
-	tailnetName := strings.Fields(strOut)[2]
+	strLines := strings.Split(string(lines), "\n")
+
+	var tailnetName string
+	for i := range strLines {
+		if strings.Contains(strLines[i], "Other devices in your tailnet") {
+			targetLine := strings.Fields(strLines[i])
+			tailnetName = targetLine[10][:len(targetLine[10])-1]
+		}
+	}
+
 	link := "https://" + tailnetName
 
 	slog.Debug("Tailscale link prefix obtained", "tailnet_name", tailnetName, "link", link)
@@ -176,7 +182,7 @@ func addNewLinkIfNotInPool(newLink string) {
 
 func exposeSinglePackage(pkgName string) (link string, err error) {
 	slog.Info("Exposing package via Funnel", "package_name", pkgName, "funnel_active", FunnelOn)
-	
+
 	if !FunnelOn {
 		slog.Info("Funnel not active, starting now")
 		err = turnOnFunnel()
@@ -185,7 +191,7 @@ func exposeSinglePackage(pkgName string) (link string, err error) {
 			return
 		}
 	}
-	
+
 	pkgPath := filepath.Join(config.DataDir, pkgName)
 	pkgPath, _ = filepath.Abs(pkgPath)
 
@@ -214,10 +220,10 @@ func exposeSinglePackage(pkgName string) (link string, err error) {
 
 func privateSinglePackage(pkgName string) (err error) {
 	slog.Info("Making package private", "package_name", pkgName)
-	
+
 	softLinkPath := filepath.Join(linkDir, pkgName)
 	slog.Debug("Removing symlink", "symlink_path", softLinkPath)
-	
+
 	err = os.Remove(softLinkPath)
 	if err != nil && os.IsNotExist(err) {
 		slog.Info("Symlink does not exist, nothing to remove", "package_name", pkgName)
