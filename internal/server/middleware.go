@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -19,7 +20,7 @@ import (
 
 var (
 	FunnelOn    = false
-	baseLink, _ = getLinkPrefix()
+	baseLink    = ""
 	linkDir, _  = filepath.Abs(filepath.Join(config.DataDir, "public"))
 	subPath     = "/wt/public"
 	pkgLinkPool []string
@@ -140,6 +141,12 @@ func getLinkPrefix() (baseLink *url.URL, err error) {
 	return
 }
 
+func setBasePath(out []byte) {
+	tempStrS := strings.Fields(string(out))
+
+	baseLink = tempStrS[4]
+}
+
 func turnOnFunnel() (err error) {
 	slog.Info("Starting Tailscale Funnel", "data_dir", config.DataDir, "sub_path", subPath)
 	linkDir = filepath.Join(config.DataDir, "public")
@@ -153,12 +160,15 @@ func turnOnFunnel() (err error) {
 
 	slog.Debug("Executing tailscale funnel command", "command", fmt.Sprintf("tailscale funnel --bg --set-path %s %s", subPath, linkDir))
 	cmd := exec.Command("tailscale", "funnel", "--bg", "--set-path", subPath, linkDir)
-	_, err = cmd.Output()
+	var out []byte
+	out, err = cmd.Output()
 	if err != nil {
 		slog.Error("Failed to start Tailscale Funnel", "error", err.Error())
 		fmt.Println(err)
 		return
 	}
+
+	setBasePath(out)
 
 	slog.Info("Tailscale Funnel started successfully", "link_dir", linkDir)
 	FunnelOn = true
@@ -167,9 +177,9 @@ func turnOnFunnel() (err error) {
 }
 
 func getPackageLink(pkgName string) string {
-	pkgLink := baseLink.JoinPath(pkgName)
+	pkgLink := path.Join(baseLink, pkgName)
 
-	return pkgLink.String()
+	return pkgLink
 }
 
 func addNewLinkIfNotInPool(newLink string) {
