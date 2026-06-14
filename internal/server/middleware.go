@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -145,6 +144,7 @@ func setBasePath(out []byte) {
 	tempStrS := strings.Fields(string(out))
 
 	baseLink = tempStrS[4]
+	fmt.Println("get original base link:", baseLink)
 }
 
 func turnOnFunnel() (err error) {
@@ -177,7 +177,7 @@ func turnOnFunnel() (err error) {
 }
 
 func getPackageLink(pkgName string) string {
-	pkgLink := path.Join(baseLink, pkgName)
+	pkgLink := baseLink + pkgName
 
 	return pkgLink
 }
