@@ -5,5 +5,8 @@
 	"write_timeout": 10800000000000,
 	"read_token": "d263d7cb961552ace4fea3af808614cd7644352aa0ae0f80c058fdfe1cb2065e",
 	"install_token": "0187f4167269bc59d94a80ac7d2be9c63c1987c910157d4d2aca1837719da346",
-	"write_token": "779073a905c8aa00c49cee8780faeabb836f2b2ed2e7a6bda6830848912a8fc9"
+	"write_token": "779073a905c8aa00c49cee8780faeabb836f2b2ed2e7a6bda6830848912a8fc9",
+    "available_servers": {
+		"ali": "http://100.2.3.1:12212"
+	}
 }

@@ -21,6 +21,10 @@ COMMANDS:
   reload     Reload server configuration from disk
   config     View or modify client configuration
   help       Show this help message
+  list-servers  List configured client servers
+  change-server <name>  Switch the active client server
+  add-server <name> <address>  Add a new named client server
+  del-server <name>  Remove a configured client server
 
 SERVER MODE:
   wt server [options]
@@ -45,3 +49,4 @@ QUICK START:
 
 For detailed usage of a specific command, use: wt help <command>
 Example: wt help upload
+For quick built-in guides, use: wt help simple or wt help advance

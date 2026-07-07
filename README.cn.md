@@ -225,8 +225,12 @@ go build -o wt ./cmd/wt
 | 公开分享 | `wt public <包名>` | 通过 Tailscale Funnel 公开分享包 |
 | 取消公开 | `wt private <包名>` | 移除包的公开分享 |
 | 查看公开链接 | `wt links` | 显示所有公开分享的包 |
+| 查看配置服务器 | `wt list-servers` | 显示配置的客户端服务器 |
+| 切换当前服务器 | `wt change-server <名称>` | 切换活动客户端服务器 |
+| 添加服务器 | `wt add-server <名称> <服务器地址>` | 添加命名的客户端服务器 |
+| 删除服务器 | `wt del-server <名称>` | 删除已配置的客户端服务器 |
 | 重载配置 | `wt reload` | 无需重启即可重载服务器配置 |
-| 显示帮助 | `wt help` | 显示帮助信息 |
+| 显示帮助 | `wt help` 或 `wt help <command>` | 显示命令帮助信息 |
 
 ---
 
