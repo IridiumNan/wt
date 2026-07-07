@@ -1,9 +1,12 @@
 package command
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"log/slog"
+	"os"
+	"strings"
 
 	"gitee.com/cai-zixiang_hainan/wt/internal/client"
 	"gitee.com/cai-zixiang_hainan/wt/internal/config"
@@ -11,6 +14,8 @@ import (
 )
 
 var Done bool
+
+var scanner = bufio.NewScanner(os.Stdin)
 
 func ClientMain(args []string, debug bool) {
 	loghelper.InitClientLogger(debug)
@@ -56,6 +61,16 @@ func ClientMain(args []string, debug bool) {
 		err = linksCommand()
 	case "private":
 		err = privateCommand(args)
+	case "list-servers":
+		listServersCommand()
+		err = nil
+	case "change-server":
+		err = changeServerCommand(args)
+	case "add-server":
+		err = addserverCommand(args)
+	case "del-server":
+		err = delServerCommand(args)
+
 	}
 
 	if err != nil {
@@ -217,5 +232,69 @@ func linksCommand() (err error) {
 func privateCommand(args []string) (err error) {
 	err = client.PrivateRequest(args[FirstTargetIndex])
 	Done = true
+	return
+}
+
+func listServersCommand() {
+	config.ListAvailableServers()
+	Done = true
+}
+
+func changeServerCommand(args []string) (err error) {
+	if len(args) == 0 {
+		return fmt.Errorf("invalid args : alias or host required")
+	}
+	if strings.Contains(args[0], "http") {
+		host := args[0]
+
+		config.ChangeCurrServer("", host)
+
+		Done = true
+		return
+	}
+
+	alias := args[0]
+
+	config.ChangeCurrServer(alias, "")
+
+	Done = true
+
+	return
+}
+
+func addserverCommand(args []string) (err error) {
+	if len(args) < 2 {
+		Done = true
+		return fmt.Errorf("invalid args : you must provide <alias> and <host>")
+	}
+
+	config.AddAvialableServer(args[0], args[1])
+	Done = true
+
+	return
+}
+
+func delServerCommand(args []string) (err error) {
+	if len(args) == 0 {
+		Done = true
+		return fmt.Errorf("invalid args : alias or host required")
+	}
+
+	if strings.Contains(args[0], "http") {
+		host := args[0]
+
+		config.DelAvialableServer("", host)
+
+		Done = true
+
+		return
+	}
+
+	alias := args[0]
+
+	config.DelAvialableServer(alias, "")
+
+	Done = true
+
 	return
 }

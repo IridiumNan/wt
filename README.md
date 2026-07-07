@@ -225,8 +225,12 @@ go build -o wt ./cmd/wt
 | Make public | `wt public <package-name>` | Share package publicly via Tailscale Funnel |
 | Revoke public | `wt private <package-name>` | Remove package from public sharing |
 | List public links | `wt links` | Show all publicly shared packages |
+| List configured servers | `wt list-servers` | Show configured client servers |
+| Switch active server | `wt change-server <name>` | Change the active client server |
+| Add a server | `wt add-server <name> <server-url>` | Add a named client server |
+| Remove a server | `wt del-server <name>` | Remove a configured client server |
 | Reload config | `wt reload` | Reload server configuration without restart |
-| Show help | `wt help` | Display help information |
+| Show help | `wt help` or `wt help <command>` | Display help information for a command |
 
 ---
 

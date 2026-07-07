@@ -82,12 +82,34 @@ func Usage(command string) {
 		fmt.Println("  wt links")
 		fmt.Println("  Description: List all public package links")
 
+	case "list-servers":
+		fmt.Println("  wt list-servers")
+		fmt.Println("  Description: Show configured client servers")
+
+	case "change-server":
+		fmt.Println("  wt change-server <server-name>")
+		fmt.Println("  Example: wt change-server prod")
+		fmt.Println("  Description: Change the active client server")
+
+	case "add-server":
+		fmt.Println("  wt add-server <name> <server-url>")
+		fmt.Println("  Example: wt add-server prod http://192.168.1.2:12212")
+		fmt.Println("  Description: Add a named client server")
+
+	case "del-server":
+		fmt.Println("  wt del-server <server-name>")
+		fmt.Println("  Example: wt del-server prod")
+		fmt.Println("  Description: Remove a configured client server")
+
 	case "reload":
 		fmt.Println("  wt reload")
 		fmt.Println("  Description: Reload server configuration")
 
 	case "help", "--help", "-h":
 		fmt.Println("  wt help")
+		fmt.Println("  wt help <command>")
+		fmt.Println("  wt help simple")
+		fmt.Println("  wt help advance")
 		fmt.Println("  Description: Show this help manual")
 
 	default:
@@ -105,6 +127,10 @@ func Usage(command string) {
 		fmt.Println("  public   - Make package publicly accessible")
 		fmt.Println("  private  - Revoke public access")
 		fmt.Println("  links    - List public package links")
+		fmt.Println("  list-servers - List configured client servers")
+		fmt.Println("  change-server - Change the active client server")
+		fmt.Println("  add-server - Add a new client server")
+		fmt.Println("  del-server - Remove a configured client server")
 		fmt.Println("  reload   - Reload server configuration")
 		fmt.Println("  help     - Show help information")
 	}

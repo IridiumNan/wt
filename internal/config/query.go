@@ -1,17 +1,25 @@
 package config
 
 import (
+	"bufio"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
 	"gitee.com/cai-zixiang_hainan/wt/internal/model"
 )
 
-// query and return server
-func queryHostPort(query model.Query) (server string) {
+var scanner = bufio.NewScanner(os.Stdin)
+
+func readInput() string {
+	scanner.Scan()
+	return strings.TrimSpace(scanner.Text())
+}
+
+func queryHostPortForServer(query model.Query) (server string) {
 	fmt.Println(query.Head)
 	fmt.Println("example:", query.Example)
 	fmt.Println("default value:", query.Default)
@@ -22,6 +30,26 @@ func queryHostPort(query model.Query) (server string) {
 	if server == "" {
 		server = query.Default
 	}
+
+	fmt.Println()
+	return
+}
+
+// query and return server
+func queryHostPortForClient(query model.Query) (alias string, server string) {
+	fmt.Println(query.Head)
+	fmt.Println("example:", query.Example)
+	fmt.Println("default value:", query.Default)
+	fmt.Printf("enter your value[default if blank] ->")
+	server = readInput()
+
+	if server == "" {
+		server = query.Default
+	}
+
+	fmt.Printf("enter alias for %s ->", server)
+	alias = readInput()
+
 	fmt.Println()
 	return
 }
@@ -29,18 +57,6 @@ func queryHostPort(query model.Query) (server string) {
 // set timeout with query input like "enter the Install timeout for client:"
 // return the timeOut which is time.Duration
 func queryTimeout(query model.Query) (timeOut time.Duration) {
-	// timeString := ""
-	//
-	// fmt.Println(query.Head)
-	// fmt.Println("example:", query.Example)
-	// fmt.Println("default value:", query.Default)
-	// fmt.Printf("enter your value[default if blank] ->")
-	// scanner.Scan()
-	// timeString = strings.TrimSpace(scanner.Text())
-	//
-	// if timeString == "" {
-	// 	timeString = query.Default
-	// }
 	timeString := query.Default
 
 	timeOut, err := time.ParseDuration(timeString)

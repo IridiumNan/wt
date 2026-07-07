@@ -22,6 +22,9 @@ type ClientConfig struct {
 	InstallToken string `json:"install_token"`
 	// auth token for write
 	WriteToken string `json:"write_token"`
+
+	// new: available servers for multi-servers manage
+	AvailableServers map[string]string `json:"available_servers"`
 }
 
 type TagAuthTokens struct {
