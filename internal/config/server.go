@@ -2,7 +2,6 @@
 package config
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -13,14 +12,12 @@ import (
 	"gitee.com/cai-zixiang_hainan/wt/internal/presets/querypresets"
 )
 
-var scanner = bufio.NewScanner(os.Stdin)
-
 var serverConfig *model.ServerConfig = &model.ServerConfig{}
 
 // queryServerConfig : generate a serverconfig by query and called by LoadServerConfig
 func queryServerConfig() (serverConfig *model.ServerConfig) {
 	serverConfig = &model.ServerConfig{
-		Server: queryHostPort(querypresets.ServerHostPortQuery),
+		Server: queryHostPortForServer(querypresets.ServerHostPortQuery),
 
 		ReadTimeout:    queryTimeout(querypresets.ServerReadTimeoutQuery),
 		InstallTimeout: queryTimeout(querypresets.ServerInstallTimeoutQuety),

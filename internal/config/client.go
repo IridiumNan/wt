@@ -15,8 +15,13 @@ import (
 var clientConfig *model.ClientConfig
 
 func queryClientConfig() {
+	initAlias, initServer := queryHostPortForClient(querypresets.ClientHostPortQuery)
+	allServers := map[string]string{}
+
+	allServers[initAlias] = initServer
+
 	clientConfig = &model.ClientConfig{
-		Server: queryHostPort(querypresets.ClientHostPortQuery),
+		Server: initServer,
 
 		ReadTimeout:    queryTimeout(querypresets.ClientReadTimeoutQuery),
 		InstallTimeout: queryTimeout(querypresets.ClientInstallTimeoutQuery),
@@ -25,6 +30,8 @@ func queryClientConfig() {
 		ReadToken:    queryClientToken(querypresets.ClientReadTokenQuery),
 		InstallToken: queryClientToken(querypresets.ClientInstallTokenQuery),
 		WriteToken:   queryClientToken(querypresets.ClientWriteTokenQuery),
+
+		AvailableServers: allServers,
 	}
 }
 
@@ -140,4 +147,107 @@ func ClientConfigShow() {
 
 	fmt.Println("you can config any element by Usage: wt config element value")
 	fmt.Println("example: wt config read_token fowehgiqwojfaoinhgvaoij")
+}
+
+// new things for multi-server manage
+
+func isCurrServer(alias string, host string) (isCurr bool) {
+	currHost := clientConfig.Server
+
+	if host == currHost {
+		return true
+	}
+
+	host = clientConfig.AvailableServers[alias]
+
+	if host == currHost {
+		return true
+	}
+
+	return
+}
+
+func addRedColor(originStr string) string {
+	colorReset := "\033[0m"
+	colorRed := "\033[31m"
+
+	return colorRed + originStr + colorReset
+}
+
+func printSingleServer(alias string, host string) {
+	alias = fmt.Sprintf("%-32s", alias)
+	if isCurrServer(alias, host) {
+		alias = addRedColor("*") + alias
+	} else {
+		alias = " " + alias
+	}
+	fmt.Println(alias, host)
+}
+
+func ListAvailableServers() {
+	if len(clientConfig.AvailableServers) == 0 {
+		fmt.Println("there is no available server")
+		return
+	}
+
+	fmt.Println("alias					host")
+	for alias := range clientConfig.AvailableServers {
+		printSingleServer(alias, clientConfig.AvailableServers[alias])
+	}
+}
+
+func ChangeCurrServer(alias string, host string) (err error) {
+	if host == "" {
+		var ok bool
+		host, ok = clientConfig.AvailableServers[alias]
+
+		if !ok {
+			fmt.Printf("server %s not found\n", alias)
+
+			fmt.Println("available servers as below")
+			ListAvailableServers()
+			return
+		}
+	}
+
+	clientConfig.Server = host
+	fmt.Printf("exec: change server as %s => %s		successfully", alias, host)
+
+	configPath, _ := GetClientConfigPath()
+	err = writeClientConfig(configPath)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func AddAvialableServer(alias string, host string) (err error) {
+	clientConfig.AvailableServers[alias] = host
+
+	fmt.Println("exec: add server ", alias, " => host ", host)
+
+	configPath, _ := GetClientConfigPath()
+	err = writeClientConfig(configPath)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func DelAvialableServer(alias string, host string) (err error) {
+	delete(clientConfig.AvailableServers, alias)
+
+	fmt.Println("exec: delete server ", alias)
+	configPath, _ := GetClientConfigPath()
+	err = writeClientConfig(configPath)
+	if err != nil {
+		return
+	}
+
+	fmt.Println("current available servers")
+	ListAvailableServers()
+
+	return
 }
