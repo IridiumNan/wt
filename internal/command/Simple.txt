@@ -16,6 +16,15 @@ UPLOAD & MANAGE:
   wt mv <old> <new>             Rename a package
   wt rm <name>                  Delete a package
 
+MULTI-SERVER
+  wt list-servers               List all available servers
+  wt add-server <server alias> <host>
+                                Add new server
+  wt del-server <server alias>  Del a server
+  
+  wt ls-servers                 Alias to wt list-servers
+  wt as                         Alias to wt add-server
+  wt ds                         Alias to wt del-server
 TAG MANAGEMENT:
   wt tag add <name>             Create a new custom tag
   wt tag rm <name>              Remove a custom tag (packages revert to temp)

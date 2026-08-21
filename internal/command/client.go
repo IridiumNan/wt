@@ -61,14 +61,14 @@ func ClientMain(args []string, debug bool) {
 		err = linksCommand()
 	case "private":
 		err = privateCommand(args)
-	case "list-servers":
+	case "list-servers", "ls-servers":
 		listServersCommand()
 		err = nil
-	case "change-server":
+	case "change-server", "cs":
 		err = changeServerCommand(args)
-	case "add-server":
+	case "add-server", "as":
 		err = addserverCommand(args)
-	case "del-server":
+	case "del-server", "ds":
 		err = delServerCommand(args)
 
 	}
